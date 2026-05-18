@@ -1,1451 +1,773 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Garry — Fine Dining</title>
+    <title>Estimate your service fee</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              gold: {
-                DEFAULT: "#C9A84C",
-                light: "#E2C06B",
-                dark: "#9E7B2F",
-                muted: "#C9A84C33",
-              },
-              cream: "#F5F0E8",
-              charcoal: {
-                DEFAULT: "#1A1A1A",
-                light: "#242424",
-                mid: "#2E2E2E",
-              },
+              primary: '#f15a22',
+              secondary: '#3ee999',
+              tertiary: '#fceacc',
+              'text-50': '#fafbfd',
+              'text-100': '#f5f5f5',
+              'text-200': '#646464',
+              'text-300': '#101010',
+              'light-primary-bg': '#fbf7f2',
+              'input-bg': '#ffffff',
+              'input-border': '#d4d7e3',
+              'input-text': '#0b1121',
+              'input-placeholder': '#b2b5c3',
+              'dark-border': '#101010',
+              'page-bg': '#f4f3ee',
             },
             fontFamily: {
-              display: ["Cormorant Garamond", "serif"],
-              body: ["Jost", "sans-serif"],
+              inter: ['Inter', 'sans-serif'],
             },
           },
         },
       };
     </script>
     <style>
-      * {
-        box-sizing: border-box;
+      body { font-family: 'Inter', sans-serif; }
+
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+
+      /* Dropdown open/close animation */
+      .dropdown-menu {
+        transform-origin: top;
+        animation: dropIn 0.15s ease-out forwards;
       }
-      html {
-        scroll-behavior: smooth;
+      @keyframes dropIn {
+        from { opacity: 0; transform: scaleY(0.93) translateY(-4px); }
+        to   { opacity: 1; transform: scaleY(1)    translateY(0);    }
       }
-      body {
-        background: #111111;
-        color: #f5f0e8;
-        font-family: "Jost", sans-serif;
+      .dropdown-menu.closing {
+        animation: dropOut 0.12s ease-in forwards;
+      }
+      @keyframes dropOut {
+        from { opacity: 1; transform: scaleY(1)    translateY(0);    }
+        to   { opacity: 0; transform: scaleY(0.93) translateY(-4px); }
       }
 
-      /* Grain overlay */
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-        pointer-events: none;
-      }
-      * {
-        position: relative;
-        z-index: 1;
-      }
+      /* Chevron */
+      .chevron-icon { transition: transform 0.2s ease; }
+      .chevron-icon.open { transform: rotate(180deg); }
 
-      .font-display {
-        font-family: "Cormorant Garamond", serif;
-      }
-      .font-body {
-        font-family: "Jost", sans-serif;
-      }
+      /* Option states */
+      .dropdown-option { transition: background-color 0.1s; }
+      .dropdown-option:hover  { background-color: #f9f5f1; }
+      .dropdown-option.is-selected { background-color: #fef3ea; }
 
-      /* Gold line divider */
-      .gold-line {
-        width: 60px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+      /* ── Calendar Picker ── */
+      .cal-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; padding: 0 14px; height: 44px;
+        background: #fff; border: 1px solid #d4d7e3;
+        border-radius: 8px; cursor: pointer; width: 100%;
+        font-size: 14px; color: #0b1121;
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.15s;
       }
-      .gold-line-lg {
-        width: 120px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+      .cal-trigger:hover { border-color: #9ca3af; }
+      .cal-trigger.open  { border-color: #0b1121; }
+      .cal-trigger-left  { display: flex; align-items: center; gap: 10px; }
+      .cal-trigger-range { font-size: 14px; font-weight: 500; color: #0b1121; }
+      .cal-trigger-range.placeholder { color: #b2b5c3; font-weight: 400; }
+      .cal-trigger-dur {
+        font-size: 11px; color: #646464;
+        background: #f4f3ee; padding: 2px 8px;
+        border-radius: 99px; white-space: nowrap;
       }
-
-      /* Navbar */
-      #navbar {
-        transition: all 0.5s ease;
+      .cal-panel {
+        position: absolute; z-index: 60; left: 0;
+        background: #fff; border: 1px solid #d4d7e3;
+        border-radius: 14px; margin-top: 6px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+        width: max-content; min-width: 100%;
+        animation: calDropIn 0.15s ease-out forwards;
       }
-      #navbar.scrolled {
-        background: rgba(17, 17, 17, 0.95);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+      @keyframes calDropIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
-      .nav-link {
-        font-family: "Jost", sans-serif;
-        font-weight: 400;
-        font-size: 0.8rem;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: rgba(245, 240, 232, 0.75);
-        transition: color 0.3s;
-        position: relative;
+      .cal-panel-inner { padding: 18px 20px 16px; }
+      .cal-quick-bar {
+        display: flex; gap: 6px; flex-wrap: wrap;
+        margin-bottom: 16px; padding-bottom: 14px;
+        border-bottom: 1px solid #f0f0ef;
       }
-      .nav-link::after {
-        content: "";
-        position: absolute;
-        bottom: -4px;
-        left: 0;
-        width: 0;
-        height: 1px;
-        background: #c9a84c;
-        transition: width 0.3s ease;
+      .cal-quick {
+        font-size: 12px; padding: 5px 12px; border-radius: 99px;
+        border: 1px solid #d4d7e3; background: transparent;
+        color: #646464; cursor: pointer;
+        transition: all 0.12s; white-space: nowrap;
+        font-family: 'Inter', sans-serif;
       }
-      .nav-link:hover {
-        color: #c9a84c;
+      .cal-quick:hover  { border-color: #f15a22; color: #f15a22; background: #fff8f5; }
+      .cal-quick.active { background: #f15a22; color: #fff; border-color: #f15a22; }
+      .cal-months {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
       }
-      .nav-link:hover::after {
-        width: 100%;
+      .cal-month-header {
+        display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 10px;
       }
-
-      /* Hero */
-      .hero-bg {
-        background:
-          linear-gradient(
-            135deg,
-            rgba(10, 8, 6, 0.92) 0%,
-            rgba(30, 20, 10, 0.75) 50%,
-            rgba(10, 8, 6, 0.9) 100%
-          ),
-          url("https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&q=80")
-            center/cover no-repeat;
+      .cal-month-nav {
+        background: none; border: none; cursor: pointer;
+        color: #646464; padding: 4px 6px; border-radius: 6px;
+        font-size: 16px; line-height: 1; transition: background 0.1s, color 0.1s;
       }
-
-      /* Section labels */
-      .section-label {
-        font-family: "Jost", sans-serif;
-        font-size: 0.65rem;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: #c9a84c;
+      .cal-month-nav:hover  { background: #f4f3ee; color: #101010; }
+      .cal-month-nav.hidden { visibility: hidden; pointer-events: none; }
+      .cal-month-title { font-size: 13px; font-weight: 600; color: #101010; }
+      .cal-weekdays {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        text-align: center; margin-bottom: 4px;
       }
-
-      /* Glass card */
-      .glass {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(201, 168, 76, 0.12);
-        backdrop-filter: blur(10px);
+      .cal-weekday { font-size: 11px; color: #b2b5c3; padding: 2px 0; }
+      .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+      .cal-day {
+        aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+        font-size: 13px; cursor: pointer; border-radius: 6px;
+        transition: background 0.1s, color 0.1s; position: relative;
+        color: #101010; user-select: none;
       }
-
-      /* Menu card */
-      .menu-card {
-        background: #161616;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.4s ease;
-        overflow: hidden;
+      .cal-day:hover:not(.disabled):not(.selected-start):not(.selected-end) {
+        background: #f4f3ee;
       }
-      .menu-card:hover {
-        border-color: rgba(201, 168, 76, 0.35);
-        transform: translateY(-6px);
-        box-shadow:
-          0 20px 50px rgba(0, 0, 0, 0.5),
-          0 0 0 1px rgba(201, 168, 76, 0.1);
+      .cal-day.disabled { color: #b2b5c3; opacity: 0.5; pointer-events: none; }
+      .cal-day.today { font-weight: 600; }
+      .cal-day.today::after {
+        content: ''; position: absolute; bottom: 3px; left: 50%;
+        transform: translateX(-50%); width: 4px; height: 4px;
+        border-radius: 50%; background: #f15a22;
       }
-      .menu-card-img {
-        overflow: hidden;
+      .cal-day.selected-start,
+      .cal-day.selected-end {
+        background: #f15a22 !important; color: #fff !important;
+        font-weight: 600; border-radius: 6px;
       }
-      .menu-card-img img {
-        transition: transform 0.6s ease;
+      .cal-day.in-range {
+        background: #fceacc; color: #101010; border-radius: 0;
       }
-      .menu-card:hover .menu-card-img img {
-        transform: scale(1.08);
+      .cal-day.selected-start:not(.same-day) { border-radius: 6px 0 0 6px; }
+      .cal-day.selected-end:not(.same-day)   { border-radius: 0 6px 6px 0; }
+      .cal-day.same-day { border-radius: 6px !important; }
+      .cal-day.range-row-start { border-radius: 6px 0 0 6px; }
+      .cal-day.range-row-end   { border-radius: 0 6px 6px 0; }
+      .cal-footer {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; margin-top: 16px; padding-top: 14px;
+        border-top: 1px solid #f0f0ef;
       }
-
-      /* CTA Buttons */
-      .btn-gold {
-        background: linear-gradient(135deg, #c9a84c, #9e7b2f);
-        color: #111;
-        font-family: "Jost", sans-serif;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        padding: 14px 36px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+      .cal-footer-info { font-size: 12px; color: #646464; }
+      .cal-footer-info strong { color: #101010; font-weight: 600; }
+      .cal-footer-btns { display: flex; gap: 8px; }
+      .cal-btn {
+        font-size: 13px; padding: 7px 16px; border-radius: 99px;
+        cursor: pointer; border: 1px solid #d4d7e3; background: transparent;
+        color: #646464; transition: all 0.12s; font-family: 'Inter', sans-serif;
       }
-      .btn-gold::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, #e2c06b, #c9a84c);
-        opacity: 0;
-        transition: opacity 0.3s;
+      .cal-btn:hover { border-color: #9ca3af; color: #101010; }
+      .cal-btn-apply {
+        background: #101010; color: #fff; border-color: #101010; font-weight: 500;
       }
-      .btn-gold:hover::before {
-        opacity: 1;
+      .cal-btn-apply:hover { background: #f15a22; border-color: #f15a22; color: #fff; }
+      .cal-hint {
+        font-size: 12px; color: #646464; margin-top: 6px;
+        display: flex; align-items: center; gap: 6px;
       }
-      .btn-gold:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(201, 168, 76, 0.3);
-      }
-      .btn-gold span {
-        position: relative;
-        z-index: 1;
-      }
-
-      .btn-outline {
-        border: 1px solid rgba(201, 168, 76, 0.5);
-        color: #c9a84c;
-        font-family: "Jost", sans-serif;
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        padding: 14px 36px;
-        transition: all 0.3s ease;
-      }
-      .btn-outline:hover {
-        background: rgba(201, 168, 76, 0.08);
-        border-color: #c9a84c;
-        transform: translateY(-2px);
-      }
-
-      /* Gallery */
-      .gallery-item {
-        overflow: hidden;
-        position: relative;
-      }
-      .gallery-item img {
-        transition: transform 0.7s ease;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      .gallery-item::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0);
-        transition: background 0.4s;
-      }
-      .gallery-item:hover img {
-        transform: scale(1.1);
-      }
-      .gallery-item:hover::after {
-        background: rgba(201, 168, 76, 0.1);
-      }
-
-      /* Testimonials */
-      .star {
-        color: #c9a84c;
-        font-size: 0.9rem;
-      }
-
-      /* Offer badge */
-      @keyframes pulse-gold {
-        0%,
-        100% {
-          box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4);
-        }
-        50% {
-          box-shadow: 0 0 0 15px rgba(201, 168, 76, 0);
-        }
-      }
-      .badge-pulse {
-        animation: pulse-gold 2.5s infinite;
-      }
-
-      /* Scroll animations */
-      .reveal {
-        opacity: 0;
-        transform: translateY(30px);
-        transition:
-          opacity 0.7s ease,
-          transform 0.7s ease;
-      }
-      .reveal.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      /* Form inputs */
-      .form-input {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #f5f0e8;
-        font-family: "Jost", sans-serif;
-        transition: border-color 0.3s;
-      }
-      .form-input:focus {
-        outline: none;
-        border-color: rgba(201, 168, 76, 0.5);
-        background: rgba(201, 168, 76, 0.03);
-      }
-      .form-input::placeholder {
-        color: rgba(245, 240, 232, 0.3);
-      }
-
-      /* Hamburger */
-      .hamburger-line {
-        transition: all 0.3s ease;
-      }
-
-      /* Tab system */
-      .tab-btn {
-        transition: all 0.3s;
-      }
-      .tab-btn.active {
-        color: #c9a84c;
-        border-bottom: 1px solid #c9a84c;
-      }
-      .tab-pane {
-        display: none;
-      }
-      .tab-pane.active {
-        display: grid;
-      }
-
-      /* Decorative */
-      .corner-bracket::before,
-      .corner-bracket::after {
-        content: "";
-        position: absolute;
-        width: 20px;
-        height: 20px;
-      }
-      .corner-bracket::before {
-        top: 0;
-        left: 0;
-        border-top: 1px solid #c9a84c;
-        border-left: 1px solid #c9a84c;
-      }
-      .corner-bracket::after {
-        bottom: 0;
-        right: 0;
-        border-bottom: 1px solid #c9a84c;
-        border-right: 1px solid #c9a84c;
-      }
-
-      /* Map placeholder */
-      .map-placeholder {
-        background: linear-gradient(135deg, #1a1a1a 0%, #222 50%, #1a1a1a 100%);
-        border: 1px solid rgba(201, 168, 76, 0.15);
-        position: relative;
-        overflow: hidden;
-      }
-      .map-placeholder::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 49px,
-            rgba(201, 168, 76, 0.05) 49px,
-            rgba(201, 168, 76, 0.05) 50px
-          ),
-          repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 49px,
-            rgba(201, 168, 76, 0.05) 49px,
-            rgba(201, 168, 76, 0.05) 50px
-          );
-      }
-
-      /* Mobile menu */
-      #mobile-menu {
-        transition: all 0.4s ease;
-        max-height: 0;
-        overflow: hidden;
-      }
-      #mobile-menu.open {
-        max-height: 400px;
+      .cal-hint-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #3ee999; flex-shrink: 0;
       }
     </style>
   </head>
-  <body>
-    <!-- ═══════════════════ NAVBAR ═══════════════════ -->
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-5">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <!-- Logo -->
-        <a href="#home" class="flex items-center gap-3 group">
-          <div
-            class="w-8 h-8 border border-gold flex items-center justify-center rotate-45 group-hover:rotate-0 transition-all duration-500"
-          >
-            <span
-              class="font-display text-gold text-xs -rotate-45 group-hover:rotate-0 transition-all duration-500"
-              >A</span
-            >
-          </div>
-          <span class="font-display text-2xl tracking-[0.15em] text-cream"
-            >AURUM</span
-          >
-        </a>
+  <body class="bg-page-bg min-h-screen px-6 py-12 flex flex-col items-center">
 
-        <!-- Desktop nav -->
-        <div class="hidden md:flex items-center gap-8">
-          <a href="#home" class="nav-link">Home</a>
-          <a href="#menu" class="nav-link">Menu</a>
-          <a href="#about" class="nav-link">About</a>
-          <a href="#gallery" class="nav-link">Gallery</a>
-          <a href="#contact" class="nav-link">Contact</a>
-          <a
-            href="#contact"
-            class="btn-gold rounded-none text-xs py-3 px-6 inline-block"
-            ><span>Reserve</span></a
-          >
+    <div class="w-full max-w-[1200px] flex flex-col gap-5">
+
+      <!-- Header -->
+      <div class="flex flex-col flex-1 mb-4">
+        <div class="flex mb-2">
+          <span class="text-sm bg-tertiary rounded-full px-3 py-1 text-text-300 font-normal tracking-wide">PRICING</span>
         </div>
-
-        <!-- Hamburger -->
-        <button
-          id="hamburger"
-          class="md:hidden flex flex-col gap-1.5 p-2"
-          onclick="toggleMenu()"
-        >
-          <span class="hamburger-line block w-6 h-px bg-cream"></span>
-          <span class="hamburger-line block w-4 h-px bg-gold ml-auto"></span>
-          <span class="hamburger-line block w-6 h-px bg-cream"></span>
-        </button>
-      </div>
-
-      <!-- Mobile menu -->
-      <div
-        id="mobile-menu"
-        class="md:hidden bg-charcoal border-t border-gold/10 mt-4"
-      >
-        <div class="flex flex-col py-4">
-          <a href="#home" class="nav-link px-6 py-3 block" onclick="closeMenu()"
-            >Home</a
-          >
-          <a href="#menu" class="nav-link px-6 py-3 block" onclick="closeMenu()"
-            >Menu</a
-          >
-          <a
-            href="#about"
-            class="nav-link px-6 py-3 block"
-            onclick="closeMenu()"
-            >About</a
-          >
-          <a
-            href="#gallery"
-            class="nav-link px-6 py-3 block"
-            onclick="closeMenu()"
-            >Gallery</a
-          >
-          <a
-            href="#contact"
-            class="nav-link px-6 py-3 block"
-            onclick="closeMenu()"
-            >Contact</a
-          >
-          <div class="px-6 pt-4">
-            <a
-              href="#contact"
-              class="btn-gold block text-center"
-              onclick="closeMenu()"
-              ><span>Reserve a Table</span></a
-            >
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- ═══════════════════ HERO ═══════════════════ -->
-    <section
-      id="home"
-      class="hero-bg min-h-screen flex items-center justify-center relative overflow-hidden"
-    >
-      <!-- Decorative lines -->
-      <div
-        class="absolute left-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col items-center gap-6"
-        style="z-index: 2"
-      >
-        <div
-          class="w-px h-32 bg-gradient-to-b from-transparent to-gold/40"
-        ></div>
-        <span class="section-label [writing-mode:vertical-lr] tracking-[0.4em]"
-          >Since 1998</span
-        >
-        <div
-          class="w-px h-32 bg-gradient-to-t from-transparent to-gold/40"
-        ></div>
-      </div>
-
-      <div class="max-w-4xl mx-auto px-6 text-center" style="z-index: 2">
-        <p class="section-label mb-6 reveal">Michelin Starred Fine Dining</p>
-        <div class="flex items-center justify-center gap-4 mb-6 reveal">
-          <div class="gold-line-lg"></div>
-          <div class="w-1.5 h-1.5 bg-gold rotate-45"></div>
-          <div class="gold-line-lg"></div>
-        </div>
-        <h1
-          class="font-display text-6xl md:text-8xl lg:text-9xl font-light leading-none text-cream mb-2 reveal"
-        >
-          Experience
+        <h1 class="mt-1 text-text-300 text-5xl md:text-6xl font-bold leading-none">
+          Estimate your service fee
         </h1>
-        <h1
-          class="font-display text-6xl md:text-8xl lg:text-9xl font-light leading-none text-cream mb-8 reveal"
-        >
-          <em class="text-gold">Fine</em> Dining
-        </h1>
-        <p
-          class="font-body text-cream/60 text-base md:text-lg max-w-xl mx-auto mb-12 font-light leading-relaxed reveal"
-        >
-          Where culinary artistry meets intimate atmosphere. Every dish tells a
-          story, every evening becomes a memory.
-        </p>
-        <div
-          class="flex flex-col sm:flex-row items-center justify-center gap-4 reveal"
-        >
-          <a href="#menu" class="btn-gold inline-block"
-            ><span>Explore Menu</span></a
-          >
-          <a href="#contact" class="btn-outline inline-block">Book a Table</a>
-        </div>
       </div>
 
-      <!-- Scroll indicator -->
-      <div
-        class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        style="z-index: 2"
-      >
-        <span class="section-label" style="font-size: 0.55rem">Scroll</span>
-        <div
-          class="w-px h-10 bg-gradient-to-b from-gold/50 to-transparent animate-pulse"
-        ></div>
-      </div>
-    </section>
+      <!-- Main Card -->
+      <div class="flex flex-col gap-6 p-6 md:p-8 rounded-2xl bg-white shadow-sm border border-gray-100">
 
-    <!-- ═══════════════════ STATS BAR ═══════════════════ -->
-    <div class="bg-charcoal-light border-y border-gold/10 py-8">
-      <div
-        class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center"
-      >
-        <div class="reveal">
-          <div class="font-display text-4xl text-gold font-light">26</div>
-          <div class="section-label mt-1">Years of Excellence</div>
+        <!-- Top Row -->
+        <div class="flex flex-col lg:flex-row items-start gap-6 w-full">
+
+          <!-- ── Left: Form ── -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="text-lg font-semibold text-text-300">Visa Application Details</h3>
+            </div>
+
+            <div class="space-y-6">
+
+              <!-- Row 1: 4 cols -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                <div class="w-full">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Application Country</label>
+                  <button type="button" class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
+                    <span class="truncate">India</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                  </button>
+                </div>
+
+                <div class="w-full">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Visa Type</label>
+                  <button type="button" class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
+                    <span class="truncate">F-1</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                  </button>
+                </div>
+
+                <div class="w-full">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Appointment Type</label>
+                  <button type="button" class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
+                    <span class="truncate">Regular</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                  </button>
+                </div>
+
+                <div class="w-full">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Total Applicants</label>
+                  <input type="number" name="applicants" value="1" placeholder="Enter" min="1"
+                    class="w-full h-11 px-3.5 py-2 bg-input-bg border border-input-border rounded-lg text-sm text-input-text focus:outline-none focus:border-input-text placeholder-input-placeholder" />
+                </div>
+
+              </div>
+
+              <!-- Info banner -->
+              <div class="min-h-7" aria-live="polite">
+                <p class="text-sm text-text-200 flex items-center gap-2 border-l-2 border-primary pl-3 py-1">
+                  <i data-lucide="calendar" class="w-4 h-4 text-primary flex-shrink-0"></i>
+                  <span>Latest slot seen in your preferences: 2026-07-27, reported an hour ago.</span>
+                </p>
+              </div>
+
+              <!-- Row 2: Location dropdowns -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <!-- ── BIOMETRICS MULTI-SELECT ── -->
+                <div class="w-full relative" id="biometrics-wrapper">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Preferred Biometrics Locations</label>
+
+                  <button id="biometrics-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
+                    class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
+                    <div id="biometrics-chips" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
+                    <span id="biometrics-placeholder" class="text-input-placeholder text-sm hidden flex-1">Select locations</span>
+                    <i data-lucide="chevron-down" id="biometrics-chevron" class="chevron-icon w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
+                  </button>
+
+                  <div id="biometrics-menu" role="listbox" aria-multiselectable="true"
+                    class="dropdown-menu hidden absolute z-50 w-full mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
+                    <ul id="biometrics-list" class="py-1 max-h-52 overflow-y-auto"></ul>
+                  </div>
+                </div>
+
+                <!-- ── CONSULAR SINGLE-SELECT ── -->
+                <div class="w-full relative" id="consular-wrapper">
+                  <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Preferred Consular Locations</label>
+
+                  <button id="consular-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
+                    class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
+                    <span id="consular-label" class="truncate text-input-placeholder">Any Location</span>
+                    <i data-lucide="chevron-down" id="consular-chevron" class="chevron-icon w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                  </button>
+
+                  <div id="consular-menu" role="listbox"
+                    class="dropdown-menu hidden absolute z-50 w-full mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
+                    <ul id="consular-list" class="py-1 max-h-52 overflow-y-auto"></ul>
+                  </div>
+                </div>
+
+              </div>
+
+              <p class="italic text-sm text-text-200 -mt-2">More locations yield early appointments; costs less.</p>
+
+              <!-- Row 3: Window + Notice -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <!-- ── APPOINTMENT WINDOW CALENDAR ── -->
+                <div>
+                  <label class="block text-sm font-medium text-text-200 mb-1 ml-0.5">Preferred Appointment Window</label>
+
+                  <!-- Calendar wrapper — relative so the panel positions correctly -->
+                  <div class="relative" id="cal-wrapper">
+
+                    <!-- Trigger button -->
+                    <button type="button" class="cal-trigger" id="calTrigger" aria-haspopup="true" aria-expanded="false">
+                      <div class="cal-trigger-left">
+                        <!-- calendar icon via lucide (initialised below) -->
+                        <i data-lucide="calendar" style="width:16px;height:16px;color:#f15a22;flex-shrink:0"></i>
+                        <span class="cal-trigger-range" id="calTriggerText">05/21/2026 → 09/10/2026</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span class="cal-trigger-dur" id="calTriggerDur">113 days</span>
+                        <i data-lucide="chevron-down" id="calTriggerChev" style="width:16px;height:16px;color:#646464;transition:transform 0.2s"></i>
+                      </div>
+                    </button>
+
+                    <!-- Dropdown panel (hidden by default) -->
+                    <div class="cal-panel" id="calPanel" style="display:none">
+                      <div class="cal-panel-inner">
+                        <!-- Quick-select presets -->
+                        <div class="cal-quick-bar" id="calQuickBar"></div>
+                        <!-- Dual-month grid -->
+                        <div class="cal-months" id="calMonths"></div>
+                        <!-- Footer: info + actions -->
+                        <div class="cal-footer">
+                          <div class="cal-footer-info" id="calFooterInfo">Select a start date</div>
+                          <div class="cal-footer-btns">
+                            <button type="button" class="cal-btn" id="calBtnClear">Clear</button>
+                            <button type="button" class="cal-btn cal-btn-apply" id="calBtnApply">Apply</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Contextual hint below the field -->
+                  <p class="cal-hint" id="calHint">
+                    <span class="cal-hint-dot"></span>
+                    <span id="calHintText">Wider window = more slot options, lower cost</span>
+                  </p>
+                </div>
+
+                <!-- Notice Period -->
+                <div>
+                  <label for="min_lead_time_days" class="text-sm font-medium text-text-200 mb-1 ml-0.5 inline-flex items-center gap-1.5">
+                    Notice Period
+                    <button type="button" aria-label="What is Notice Period?" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                      <i data-lucide="info" class="w-4 h-4"></i>
+                    </button>
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <input id="min_lead_time_days" type="number" inputmode="numeric" min="0" max="90" step="1"
+                      placeholder="3" value="3" name="min_lead_time_days"
+                      class="w-20 h-11 px-3 py-2 bg-input-bg border border-input-border rounded-lg text-input-text focus:outline-none focus:border-gray-500 placeholder-input-placeholder text-sm text-center" />
+                    <span class="text-sm text-text-200">days</span>
+                  </div>
+                  <p class="text-sm text-text-200 mt-2">Enter <strong>0</strong> to allow next-day appointments.</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Right: Service Fee Card ── -->
+          <div class="w-full lg:w-[300px] lg:flex-shrink-0">
+            <div class="bg-tertiary p-8 rounded-2xl flex flex-col items-center text-center">
+              <h3 class="text-lg font-semibold text-text-300">Service Fee</h3>
+              <p class="text-sm text-text-200 mt-2 leading-relaxed">
+                The cost to book a Regular F-1 visa appointment for 1 applicants in 1 locations within 0 day-window is
+              </p>
+              <div class="flex gap-1 items-end justify-center text-text-300 font-bold text-2xl my-5">
+                <span class="mb-2">$</span>
+                <span class="text-7xl font-bold leading-none">0</span>
+              </div>
+              <button type="button"
+                class="flex items-center justify-center bg-black border border-black hover:border-primary rounded-full text-white hover:text-primary px-5 py-2 text-sm font-normal transition-all duration-300 hover:scale-95 hover:shadow-lg gap-2">
+                <span>Pay Now</span>
+                <i data-lucide="chevron-down" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
         </div>
-        <div class="reveal">
-          <div class="font-display text-4xl text-gold font-light">3</div>
-          <div class="section-label mt-1">Michelin Stars</div>
+
+        <!-- Bottom trust row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full pt-6 border-t border-gray-200 items-center justify-items-center text-center text-primary text-sm">
+          <span>✓ Track the progress online</span>
+          <span>✓ Dedicated human assistance</span>
+          <span>✓ 100% Refund</span>
         </div>
-        <div class="reveal">
-          <div class="font-display text-4xl text-gold font-light">40+</div>
-          <div class="section-label mt-1">Signature Dishes</div>
-        </div>
-        <div class="reveal">
-          <div class="font-display text-4xl text-gold font-light">98%</div>
-          <div class="section-label mt-1">Guest Satisfaction</div>
-        </div>
+
       </div>
     </div>
 
-    <!-- ═══════════════════ ABOUT ═══════════════════ -->
-    <section id="about" class="py-28 px-6">
-      <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-        <!-- Image side -->
-        <div class="relative reveal">
-          <div class="aspect-[4/5] overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=800&q=80"
-              alt="Chef at work"
-              class="w-full h-full object-cover"
-            />
-          </div>
-          <!-- Floating award card -->
-          <div class="glass absolute -bottom-6 -right-6 p-5 max-w-[180px]">
-            <div class="text-gold text-2xl mb-1">★★★</div>
-            <div class="font-display text-cream text-sm">Michelin Guide</div>
-            <div class="section-label mt-1" style="font-size: 0.6rem">
-              2024 Award
-            </div>
-          </div>
-          <!-- Decorative frame -->
-          <div class="absolute -top-4 -left-4 w-32 h-32 corner-bracket"></div>
-        </div>
-
-        <!-- Text side -->
-        <div class="reveal">
-          <p class="section-label mb-4">Our Story</p>
-          <div class="gold-line mb-6"></div>
-          <h2
-            class="font-display text-5xl md:text-6xl font-light text-cream leading-tight mb-6"
-          >
-            A Legacy of <em class="text-gold">Flavour</em> & Passion
-          </h2>
-          <p class="font-body text-cream/60 text-sm leading-relaxed mb-4">
-            Founded in 1998 by Chef Éric Laurent, Aurum was born from a singular
-            vision: to create dishes that transcend the plate and become
-            experiences. Our kitchen is where classical French technique meets
-            seasonal provenance and modern imagination.
-          </p>
-          <p class="font-body text-cream/60 text-sm leading-relaxed mb-8">
-            Every ingredient is sourced from trusted artisan producers across
-            Europe. Our sommelier team maintains a cellar of over 800 labels.
-            From the first amuse-bouche to the final petit four, every detail is
-            considered.
-          </p>
-          <!-- Awards list -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex items-start gap-3">
-              <div class="w-px h-10 bg-gold/50 flex-shrink-0 mt-1"></div>
-              <div>
-                <div class="font-display text-cream">Michelin ★★★</div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Consecutive 8 years
-                </div>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-px h-10 bg-gold/50 flex-shrink-0 mt-1"></div>
-              <div>
-                <div class="font-display text-cream">World's Top 50</div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Restaurant list 2024
-                </div>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-px h-10 bg-gold/50 flex-shrink-0 mt-1"></div>
-              <div>
-                <div class="font-display text-cream">James Beard Award</div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Outstanding Chef
-                </div>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-px h-10 bg-gold/50 flex-shrink-0 mt-1"></div>
-              <div>
-                <div class="font-display text-cream">Wine Spectator</div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Grand Award
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ MENU ═══════════════════ -->
-    <section id="menu" class="py-28 px-6 bg-[#0D0D0D]">
-      <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-16 reveal">
-          <p class="section-label mb-4">Culinary Creations</p>
-          <div class="flex items-center justify-center gap-4 mb-4">
-            <div class="gold-line"></div>
-            <div class="w-1 h-1 bg-gold rotate-45"></div>
-            <div class="gold-line"></div>
-          </div>
-          <h2 class="font-display text-5xl md:text-6xl font-light text-cream">
-            Our <em class="text-gold">Menu</em>
-          </h2>
-        </div>
-
-        <!-- Category tabs -->
-        <div
-          class="flex items-center justify-center gap-8 mb-12 border-b border-white/10 reveal"
-        >
-          <button
-            class="tab-btn active pb-4 section-label"
-            data-tab="starters"
-            onclick="switchTab('starters')"
-          >
-            Starters
-          </button>
-          <button
-            class="tab-btn pb-4 section-label"
-            data-tab="mains"
-            onclick="switchTab('mains')"
-          >
-            Main Course
-          </button>
-          <button
-            class="tab-btn pb-4 section-label"
-            data-tab="desserts"
-            onclick="switchTab('desserts')"
-          >
-            Desserts
-          </button>
-        </div>
-
-        <!-- Starters -->
-        <div
-          id="tab-starters"
-          class="tab-pane active grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80"
-                alt="Oysters"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">
-                  Gillardeau Oysters
-                </h3>
-                <span class="text-gold font-body text-sm font-light">£28</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                No. 3 oysters with cucumber mignonette, shallot vinegar, and sea
-                herbs
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1547592180-85f173990554?w=500&q=80"
-                alt="Soup"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">Truffle Velouté</h3>
-                <span class="text-gold font-body text-sm font-light">£22</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Cauliflower velouté with black truffle shavings, chive oil and
-                cured egg yolk
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1551248429-40975aa4de74?w=500&q=80"
-                alt="Salad"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">
-                  Seared Foie Gras
-                </h3>
-                <span class="text-gold font-body text-sm font-light">£34</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Duck foie gras with brioche, Sauternes gel, compressed apple and
-                hazelnuts
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mains -->
-        <div
-          id="tab-mains"
-          class="tab-pane grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1600803907087-f56d462fd26b?w=500&q=80"
-                alt="Beef"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">
-                  Wagyu Côte de Bœuf
-                </h3>
-                <span class="text-gold font-body text-sm font-light">£95</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                A5 wagyu, roasted bone marrow, sauce bordelaise with truffle
-                pomme purée
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&q=80"
-                alt="Fish"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">
-                  Turbot en Croûte
-                </h3>
-                <span class="text-gold font-body text-sm font-light">£68</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Wild turbot in herb crust, lobster bisque, samphire, sea
-                vegetables, roe butter
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80"
-                alt="Lamb"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">Rack of Lamb</h3>
-                <span class="text-gold font-body text-sm font-light">£72</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Herb-crusted lamb, confit shoulder croquette, whipped goat
-                cheese, jus d'agneau
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Desserts -->
-        <div
-          id="tab-desserts"
-          class="tab-pane grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&q=80"
-                alt="Dessert"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">Tarte Tatin</h3>
-                <span class="text-gold font-body text-sm font-light">£18</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Caramelised apple tarte tatin, Calvados crème fraîche, vanilla
-                ice cream
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&q=80"
-                alt="Chocolate"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">
-                  Valrhona Coulant
-                </h3>
-                <span class="text-gold font-body text-sm font-light">£16</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Warm 72% chocolate fondant, salted caramel core, praline soil,
-                cocoa tuile
-              </p>
-            </div>
-          </div>
-          <div class="menu-card rounded-sm">
-            <div class="menu-card-img h-52">
-              <img
-                src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&q=80"
-                alt="Soufflé"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-display text-xl text-cream">Citrus Soufflé</h3>
-                <span class="text-gold font-body text-sm font-light">£17</span>
-              </div>
-              <p class="font-body text-cream/50 text-xs leading-relaxed">
-                Yuzu and lemon soufflé, bergamot curd, micro lemon sorbet,
-                candied zest
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-center mt-12 reveal">
-          <a href="#contact" class="btn-outline inline-block">View Full Menu</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ SPECIAL OFFER ═══════════════════ -->
-    <section class="py-20 px-6">
-      <div class="max-w-4xl mx-auto reveal">
-        <div
-          class="glass border border-gold/20 p-12 text-center relative overflow-hidden corner-bracket"
-        >
-          <!-- BG decorative -->
-          <div class="absolute inset-0 overflow-hidden" style="z-index: 0">
-            <div
-              class="absolute top-0 right-0 w-64 h-64 rounded-full bg-gold/5 -translate-y-32 translate-x-32"
-            ></div>
-            <div
-              class="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-gold/5 translate-y-24 -translate-x-24"
-            ></div>
-          </div>
-
-          <!-- Badge -->
-          <div
-            class="inline-flex items-center justify-center w-20 h-20 rounded-full border-2 border-gold bg-gold/10 mb-6 badge-pulse"
-            style="z-index: 1; position: relative"
-          >
-            <span class="font-display text-gold text-lg font-semibold"
-              >20%<br />OFF</span
-            >
-          </div>
-
-          <p class="section-label mb-3" style="position: relative; z-index: 1">
-            Limited Time Offer
-          </p>
-          <h2
-            class="font-display text-4xl md:text-5xl text-cream font-light mb-4"
-            style="position: relative; z-index: 1"
-          >
-            The Chef's <em class="text-gold">Prestige</em> Menu
-          </h2>
-          <p
-            class="font-body text-cream/60 text-sm max-w-md mx-auto mb-8"
-            style="position: relative; z-index: 1"
-          >
-            Book our 7-course prestige tasting menu for two and receive 20% off
-            when you reserve before 31 March 2025. Includes paired wines.
-          </p>
-          <div
-            class="flex flex-col sm:flex-row items-center justify-center gap-4"
-            style="position: relative; z-index: 1"
-          >
-            <a href="#contact" class="btn-gold inline-block"
-              ><span>Claim Offer</span></a
-            >
-            <span class="font-body text-cream/40 text-xs"
-              >Use code: PRESTIGE20</span
-            >
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ GALLERY ═══════════════════ -->
-    <section id="gallery" class="py-28 px-6 bg-[#0D0D0D]">
-      <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16 reveal">
-          <p class="section-label mb-4">Visual Journey</p>
-          <div class="flex items-center justify-center gap-4 mb-4">
-            <div class="gold-line"></div>
-            <div class="w-1 h-1 bg-gold rotate-45"></div>
-            <div class="gold-line"></div>
-          </div>
-          <h2 class="font-display text-5xl md:text-6xl font-light text-cream">
-            The <em class="text-gold">Gallery</em>
-          </h2>
-        </div>
-
-        <div
-          class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 reveal"
-        >
-          <div class="gallery-item h-64 col-span-2 row-span-1">
-            <img
-              src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80"
-              alt="Restaurant interior"
-            />
-          </div>
-          <div class="gallery-item h-64">
-            <img
-              src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80"
-              alt="Dish"
-            />
-          </div>
-          <div class="gallery-item h-64">
-            <img
-              src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&q=80"
-              alt="Pizza"
-            />
-          </div>
-          <div class="gallery-item h-64">
-            <img
-              src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80"
-              alt="Table setting"
-            />
-          </div>
-          <div class="gallery-item h-64">
-            <img
-              src="https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=500&q=80"
-              alt="Plated food"
-            />
-          </div>
-          <div class="gallery-item h-64 col-span-2">
-            <img
-              src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=800&q=80"
-              alt="Kitchen"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ TESTIMONIALS ═══════════════════ -->
-    <section class="py-28 px-6">
-      <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16 reveal">
-          <p class="section-label mb-4">Guest Voices</p>
-          <div class="flex items-center justify-center gap-4 mb-4">
-            <div class="gold-line"></div>
-            <div class="w-1 h-1 bg-gold rotate-45"></div>
-            <div class="gold-line"></div>
-          </div>
-          <h2 class="font-display text-5xl md:text-6xl font-light text-cream">
-            What They <em class="text-gold">Say</em>
-          </h2>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="glass p-8 reveal">
-            <div class="flex gap-1 mb-5">
-              <span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span>
-            </div>
-            <p
-              class="font-display text-lg text-cream/80 italic leading-relaxed mb-6"
-            >
-              "An extraordinary evening. The wagyu was transcendent and the
-              sommelier's wine pairings showed a level of expertise rarely
-              encountered outside Paris."
-            </p>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center font-display text-gold"
-              >
-                J
-              </div>
-              <div>
-                <div class="font-body text-sm text-cream font-medium">
-                  James Whitmore
-                </div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  London, UK
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="glass p-8 reveal border-gold/25">
-            <div class="flex gap-1 mb-5">
-              <span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span>
-            </div>
-            <p
-              class="font-display text-lg text-cream/80 italic leading-relaxed mb-6"
-            >
-              "Aurum is simply a masterclass in hospitality. From the
-              amuse-bouche to the petit fours, every course was a revelation.
-              Will return without question."
-            </p>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center font-display text-gold"
-              >
-                S
-              </div>
-              <div>
-                <div class="font-body text-sm text-cream font-medium">
-                  Sophie Marchetti
-                </div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Milan, Italy
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="glass p-8 reveal">
-            <div class="flex gap-1 mb-5">
-              <span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span><span class="star">★</span
-              ><span class="star">★</span>
-            </div>
-            <p
-              class="font-display text-lg text-cream/80 italic leading-relaxed mb-6"
-            >
-              "The tasting menu is pure poetry. Each dish builds upon the last.
-              Chef Laurent's vision is extraordinary — this is what fine dining
-              should feel like."
-            </p>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center font-display text-gold"
-              >
-                H
-              </div>
-              <div>
-                <div class="font-body text-sm text-cream font-medium">
-                  Hiroshi Tanaka
-                </div>
-                <div class="section-label" style="font-size: 0.6rem">
-                  Tokyo, Japan
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ CONTACT ═══════════════════ -->
-    <section id="contact" class="py-28 px-6 bg-[#0D0D0D]">
-      <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16 reveal">
-          <p class="section-label mb-4">Get In Touch</p>
-          <div class="flex items-center justify-center gap-4 mb-4">
-            <div class="gold-line"></div>
-            <div class="w-1 h-1 bg-gold rotate-45"></div>
-            <div class="gold-line"></div>
-          </div>
-          <h2 class="font-display text-5xl md:text-6xl font-light text-cream">
-            Reserve Your <em class="text-gold">Table</em>
-          </h2>
-        </div>
-
-        <div class="grid lg:grid-cols-2 gap-12">
-          <!-- Form -->
-          <div class="reveal">
-            <form onsubmit="handleForm(event)" class="space-y-4">
-              <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    class="section-label block mb-2"
-                    style="font-size: 0.6rem"
-                    >Your Name</label
-                  >
-                  <input
-                    type="text"
-                    placeholder="Jean Dupont"
-                    class="form-input w-full px-4 py-3 text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    class="section-label block mb-2"
-                    style="font-size: 0.6rem"
-                    >Email Address</label
-                  >
-                  <input
-                    type="email"
-                    placeholder="jean@example.com"
-                    class="form-input w-full px-4 py-3 text-sm"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    class="section-label block mb-2"
-                    style="font-size: 0.6rem"
-                    >Date</label
-                  >
-                  <input
-                    type="date"
-                    class="form-input w-full px-4 py-3 text-sm"
-                  />
-                </div>
-                <div>
-                  <label
-                    class="section-label block mb-2"
-                    style="font-size: 0.6rem"
-                    >Guests</label
-                  >
-                  <select
-                    class="form-input w-full px-4 py-3 text-sm bg-transparent"
-                  >
-                    <option value="2">2 Guests</option>
-                    <option value="4">4 Guests</option>
-                    <option value="6">6 Guests</option>
-                    <option value="8+">8+ Guests</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label
-                  class="section-label block mb-2"
-                  style="font-size: 0.6rem"
-                  >Special Requests</label
-                >
-                <textarea
-                  rows="4"
-                  placeholder="Dietary requirements, special occasions, preferences..."
-                  class="form-input w-full px-4 py-3 text-sm resize-none"
-                ></textarea>
-              </div>
-              <button type="submit" class="btn-gold w-full">
-                <span>Confirm Reservation</span>
-              </button>
-            </form>
-            <div
-              id="form-success"
-              class="hidden mt-4 glass border-gold/30 p-4 text-center"
-            >
-              <p class="font-display text-gold text-lg">
-                Thank you for your reservation!
-              </p>
-              <p class="font-body text-cream/60 text-xs mt-1">
-                We'll confirm your booking within 2 hours.
-              </p>
-            </div>
-          </div>
-
-          <!-- Info + Map -->
-          <div class="reveal space-y-6">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="glass p-5">
-                <div class="text-gold text-lg mb-2">📍</div>
-                <div class="section-label mb-1">Address</div>
-                <p class="font-body text-cream/70 text-sm">
-                  12 Rue des Fleurs<br />75001 Paris, France
-                </p>
-              </div>
-              <div class="glass p-5">
-                <div class="text-gold text-lg mb-2">📞</div>
-                <div class="section-label mb-1">Reservations</div>
-                <p class="font-body text-cream/70 text-sm">
-                  +33 (0)1 42 60 00 00<br />reservations@aurum.fr
-                </p>
-              </div>
-              <div class="glass p-5 col-span-2">
-                <div class="text-gold text-lg mb-2">🕐</div>
-                <div class="section-label mb-2">Opening Hours</div>
-                <div class="grid grid-cols-2 gap-2 font-body text-xs">
-                  <span class="text-cream/50">Lunch (Tue–Sat)</span>
-                  <span class="text-cream/80">12:00 – 14:30</span>
-                  <span class="text-cream/50">Dinner (Tue–Sat)</span>
-                  <span class="text-cream/80">18:30 – 22:00</span>
-                  <span class="text-cream/50">Sunday</span>
-                  <span class="text-cream/80">Closed</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Map placeholder -->
-            <div
-              class="map-placeholder h-52 flex items-center justify-center"
-              style="z-index: 1"
-            >
-              <div class="text-center" style="z-index: 2; position: relative">
-                <div class="text-3xl mb-2">📍</div>
-                <p class="font-display text-gold text-lg">12 Rue des Fleurs</p>
-                <p class="section-label mt-1">Paris, France · 75001</p>
-                <a
-                  href="https://maps.google.com"
-                  target="_blank"
-                  class="inline-block mt-3 text-xs text-gold/70 underline underline-offset-2 font-body hover:text-gold transition-colors"
-                  >Open in Google Maps →</a
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════ FOOTER ═══════════════════ -->
-    <footer class="border-t border-white/5 py-16 px-6">
-      <div class="max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-4 gap-10 mb-12">
-          <!-- Brand -->
-          <div class="md:col-span-2">
-            <div class="flex items-center gap-3 mb-4">
-              <div
-                class="w-8 h-8 border border-gold flex items-center justify-center rotate-45"
-              >
-                <span class="font-display text-gold text-xs -rotate-45">A</span>
-              </div>
-              <span class="font-display text-2xl tracking-[0.15em] text-cream"
-                >AURUM</span
-              >
-            </div>
-            <p
-              class="font-body text-cream/50 text-sm leading-relaxed max-w-xs mb-6"
-            >
-              A temple of gastronomy in the heart of Paris. Three Michelin
-              stars, one unforgettable experience.
-            </p>
-            <!-- Social -->
-            <div class="flex gap-4">
-              <a
-                href="#"
-                class="w-9 h-9 border border-white/10 flex items-center justify-center text-cream/50 hover:border-gold hover:text-gold transition-all text-sm"
-                >f</a
-              >
-              <a
-                href="#"
-                class="w-9 h-9 border border-white/10 flex items-center justify-center text-cream/50 hover:border-gold hover:text-gold transition-all text-sm"
-                >in</a
-              >
-              <a
-                href="#"
-                class="w-9 h-9 border border-white/10 flex items-center justify-center text-cream/50 hover:border-gold hover:text-gold transition-all text-sm"
-                >ig</a
-              >
-              <a
-                href="#"
-                class="w-9 h-9 border border-white/10 flex items-center justify-center text-cream/50 hover:border-gold hover:text-gold transition-all text-sm"
-                >yt</a
-              >
-            </div>
-          </div>
-
-          <!-- Links -->
-          <div>
-            <h4 class="section-label mb-5">Navigation</h4>
-            <ul class="space-y-3">
-              <li>
-                <a
-                  href="#home"
-                  class="font-body text-cream/50 text-sm hover:text-gold transition-colors"
-                  >Home</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#about"
-                  class="font-body text-cream/50 text-sm hover:text-gold transition-colors"
-                  >Our Story</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#menu"
-                  class="font-body text-cream/50 text-sm hover:text-gold transition-colors"
-                  >Menu</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#gallery"
-                  class="font-body text-cream/50 text-sm hover:text-gold transition-colors"
-                  >Gallery</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#contact"
-                  class="font-body text-cream/50 text-sm hover:text-gold transition-colors"
-                  >Reservations</a
-                >
-              </li>
-            </ul>
-          </div>
-
-          <!-- Newsletter -->
-          <div>
-            <h4 class="section-label mb-5">Newsletter</h4>
-            <p class="font-body text-cream/50 text-xs mb-4">
-              Receive news on seasonal menus, events, and exclusive offers.
-            </p>
-            <div class="flex gap-2">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                class="form-input flex-1 px-3 py-2 text-xs"
-              />
-              <button class="btn-gold px-4 py-2 text-xs"><span>→</span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom bar -->
-        <div
-          class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
-        >
-          <p class="font-body text-cream/30 text-xs">
-            © 2025 Aurum Restaurant. All rights reserved.
-          </p>
-          <p class="font-body text-cream/30 text-xs">
-            Designed with intention. Crafted with care.
-          </p>
-        </div>
-      </div>
-    </footer>
-
+    <!-- ══════════════════════════════════════════════════════
+         JavaScript: Location Dropdowns
+    ════════════════════════════════════════════════════════ -->
     <script>
-      // Navbar scroll effect
-      const navbar = document.getElementById("navbar");
-      window.addEventListener("scroll", () => {
-        if (window.scrollY > 60) navbar.classList.add("scrolled");
-        else navbar.classList.remove("scrolled");
+    (() => {
+      const biometricsLocations = [
+        "New Delhi VAC","Mumbai VAC","Hyderabad VAC","Chennai VAC","Kolkata VAC",
+      ];
+      const consularLocations = [
+        "New Delhi","Mumbai","Hyderabad","Chennai","Kolkata",
+      ];
+
+      let selectedBiometrics = ["New Delhi VAC"];
+      let selectedConsular   = null;
+
+      const bioBtn         = document.getElementById("biometrics-btn");
+      const bioMenu        = document.getElementById("biometrics-menu");
+      const bioList        = document.getElementById("biometrics-list");
+      const bioChips       = document.getElementById("biometrics-chips");
+      const bioPlaceholder = document.getElementById("biometrics-placeholder");
+      const bioChevron     = document.getElementById("biometrics-chevron");
+      const conBtn         = document.getElementById("consular-btn");
+      const conMenu        = document.getElementById("consular-menu");
+      const conList        = document.getElementById("consular-list");
+      const conLabel       = document.getElementById("consular-label");
+      const conChevron     = document.getElementById("consular-chevron");
+
+      const isOpen = (menu) => !menu.classList.contains("hidden");
+
+      function openMenu(menu, chevron, btn) {
+        menu.classList.remove("hidden","closing");
+        chevron.classList.add("open");
+        btn.setAttribute("aria-expanded","true");
+      }
+      function closeMenu(menu, chevron, btn) {
+        if (menu.classList.contains("hidden")) return;
+        chevron.classList.remove("open");
+        btn.setAttribute("aria-expanded","false");
+        menu.classList.add("closing");
+        menu.addEventListener("animationend", () => {
+          menu.classList.add("hidden");
+          menu.classList.remove("closing");
+        }, { once: true });
+      }
+      function closeAll(except) {
+        if (except !== "bio") closeMenu(bioMenu, bioChevron, bioBtn);
+        if (except !== "con") closeMenu(conMenu, conChevron, conBtn);
+      }
+
+      const xSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+      const checkSVG = (v) => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f15a22" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:${v?1:0};transition:opacity 0.1s"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+      function renderChips() {
+        bioChips.innerHTML = "";
+        if (selectedBiometrics.length === 0) { bioPlaceholder.classList.remove("hidden"); return; }
+        bioPlaceholder.classList.add("hidden");
+        selectedBiometrics.forEach(loc => {
+          const chip = document.createElement("span");
+          chip.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 font-normal select-none";
+          chip.innerHTML = `${loc}<span role="button" tabindex="0" data-loc="${loc}" class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center" aria-label="Remove ${loc}">${xSVG}</span>`;
+          bioChips.appendChild(chip);
+        });
+        bioChips.querySelectorAll(".chip-x").forEach(x => {
+          x.addEventListener("click", e => { e.stopPropagation(); removeBio(x.dataset.loc); });
+          x.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" ") { e.stopPropagation(); removeBio(x.dataset.loc); } });
+        });
+      }
+      function renderBioOptions() {
+        bioList.innerHTML = "";
+        biometricsLocations.forEach(loc => {
+          const selected = selectedBiometrics.includes(loc);
+          const li = document.createElement("li");
+          li.setAttribute("role","option"); li.setAttribute("aria-selected",selected);
+          li.className = `dropdown-option flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${selected?" is-selected":""}`;
+          li.innerHTML = `<span>${loc}</span>${checkSVG(selected)}`;
+          li.addEventListener("click", () => toggleBio(loc));
+          bioList.appendChild(li);
+        });
+      }
+      function toggleBio(loc) { selectedBiometrics.includes(loc) ? removeBio(loc) : (selectedBiometrics.push(loc), renderChips(), renderBioOptions()); }
+      function removeBio(loc) { selectedBiometrics = selectedBiometrics.filter(l=>l!==loc); renderChips(); renderBioOptions(); }
+
+      function renderConLabel() {
+        if (selectedConsular) { conLabel.textContent = selectedConsular; conLabel.style.color = "#0b1121"; }
+        else { conLabel.textContent = "Any Location"; conLabel.style.color = "#b2b5c3"; }
+      }
+      function renderConOptions() {
+        conList.innerHTML = "";
+        const anySelected = selectedConsular === null;
+        const anyLi = document.createElement("li");
+        anyLi.setAttribute("role","option"); anyLi.setAttribute("aria-selected",anySelected);
+        anyLi.className = `dropdown-option flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm${anySelected?" is-selected text-text-300":" text-text-200"}`;
+        anyLi.innerHTML = `<span>Any Location</span>${checkSVG(anySelected)}`;
+        anyLi.addEventListener("click", () => selectCon(null));
+        conList.appendChild(anyLi);
+        const div = document.createElement("li"); div.setAttribute("role","separator"); div.className = "border-t border-gray-100 my-1 mx-2"; conList.appendChild(div);
+        consularLocations.forEach(loc => {
+          const selected = selectedConsular === loc;
+          const li = document.createElement("li");
+          li.setAttribute("role","option"); li.setAttribute("aria-selected",selected);
+          li.className = `dropdown-option flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${selected?" is-selected":""}`;
+          li.innerHTML = `<span>${loc}</span>${checkSVG(selected)}`;
+          li.addEventListener("click", () => selectCon(loc));
+          conList.appendChild(li);
+        });
+      }
+      function selectCon(loc) { selectedConsular = loc; renderConLabel(); renderConOptions(); closeMenu(conMenu, conChevron, conBtn); }
+
+      bioBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        isOpen(bioMenu) ? closeMenu(bioMenu, bioChevron, bioBtn) : (closeAll("bio"), renderBioOptions(), openMenu(bioMenu, bioChevron, bioBtn));
       });
+      conBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        isOpen(conMenu) ? closeMenu(conMenu, conChevron, conBtn) : (closeAll("con"), renderConOptions(), openMenu(conMenu, conChevron, conBtn));
+      });
+      document.addEventListener("click", e => {
+        if (!document.getElementById("biometrics-wrapper").contains(e.target)) closeMenu(bioMenu, bioChevron, bioBtn);
+        if (!document.getElementById("consular-wrapper").contains(e.target)) closeMenu(conMenu, conChevron, conBtn);
+      });
+      document.addEventListener("keydown", e => { if (e.key==="Escape") closeAll(null); });
 
-      // Hamburger menu
-      function toggleMenu() {
-        document.getElementById("mobile-menu").classList.toggle("open");
-      }
-      function closeMenu() {
-        document.getElementById("mobile-menu").classList.remove("open");
-      }
-
-      // Reveal on scroll
-      const reveals = document.querySelectorAll(".reveal");
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry, i) => {
-            if (entry.isIntersecting) {
-              setTimeout(() => entry.target.classList.add("visible"), i * 80);
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.1 },
-      );
-      reveals.forEach((el) => observer.observe(el));
-
-      // Menu tabs
-      function switchTab(tab) {
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((b) => b.classList.remove("active"));
-        document
-          .querySelectorAll(".tab-pane")
-          .forEach((p) => p.classList.remove("active"));
-        document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
-        document.getElementById(`tab-${tab}`).classList.add("active");
-      }
-
-      // Form submission
-      function handleForm(e) {
-        e.preventDefault();
-        document.getElementById("form-success").classList.remove("hidden");
-        e.target.reset();
-        setTimeout(
-          () => document.getElementById("form-success").classList.add("hidden"),
-          5000,
-        );
-      }
+      lucide.createIcons();
+      renderChips();
+      renderConLabel();
+    })();
     </script>
+
+    <!-- ══════════════════════════════════════════════════════
+         JavaScript: Calendar Range Picker
+    ════════════════════════════════════════════════════════ -->
+    <script>
+    (() => {
+      const today   = new Date(2026, 4, 19);
+      let startD    = new Date(2026, 4, 21);
+      let endD      = new Date(2026, 8, 10);
+      let hoverD    = null;
+      let selecting = false;
+      let viewYear  = 2026, viewMonth = 4;
+      let panelOpen = false;
+      let activeQuick = null;
+
+      const QUICKS = [
+        { label: '1 week',    days: 7   },
+        { label: '2 weeks',   days: 14  },
+        { label: '1 month',   days: 30  },
+        { label: '3 months',  days: 90  },
+        { label: '6 months',  days: 180 },
+        { label: 'Next year', days: 365 },
+      ];
+      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const WDAYS  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+      const elTrigger   = document.getElementById('calTrigger');
+      const elPanel     = document.getElementById('calPanel');
+      const elTrigText  = document.getElementById('calTriggerText');
+      const elTrigDur   = document.getElementById('calTriggerDur');
+      const elTrigChev  = document.getElementById('calTriggerChev');
+      const elQuickBar  = document.getElementById('calQuickBar');
+      const elMonths    = document.getElementById('calMonths');
+      const elFooter    = document.getElementById('calFooterInfo');
+      const elHintText  = document.getElementById('calHintText');
+      const elBtnClear  = document.getElementById('calBtnClear');
+      const elBtnApply  = document.getElementById('calBtnApply');
+
+      function fmt(d) {
+        return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
+      }
+      function dKey(d) { return d ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : null; }
+      function daysDiff(a, b) { return Math.round(Math.abs(b - a) / 86400000); }
+      function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+
+      function updateTrigger() {
+        if (startD && endD) {
+          const d = daysDiff(startD, endD);
+          elTrigText.textContent = `${fmt(startD)} → ${fmt(endD)}`;
+          elTrigText.classList.remove('placeholder');
+          elTrigDur.textContent = `${d} day${d!==1?'s':''}`;
+          elTrigDur.style.display = '';
+          elHintText.textContent =
+            d <= 14  ? '⚡ Tight window — fewer available slots' :
+            d <= 30  ? '✓ Moderate window — decent options' :
+            d <= 90  ? '✓ Good range — more slots, lower cost' :
+                       '✓ Wide window — best availability & lowest cost';
+        } else if (startD) {
+          elTrigText.textContent = `${fmt(startD)} → …`;
+          elTrigText.classList.remove('placeholder');
+          elTrigDur.style.display = 'none';
+          elHintText.textContent = 'Now pick an end date';
+        } else {
+          elTrigText.textContent = 'Select date range';
+          elTrigText.classList.add('placeholder');
+          elTrigDur.style.display = 'none';
+          elHintText.textContent = 'Wider window = more slot options, lower cost';
+        }
+      }
+
+      function updateFooter() {
+        if (!startD) {
+          elFooter.innerHTML = 'Pick a <strong>start</strong> date';
+        } else if (!endD) {
+          elFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; pick end date`;
+        } else {
+          const d = daysDiff(startD, endD);
+          elFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; <strong>${fmt(endD)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}`;
+        }
+      }
+
+      function renderQuickBar() {
+        elQuickBar.innerHTML = '';
+        QUICKS.forEach(q => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cal-quick' + (activeQuick === q.days ? ' active' : '');
+          btn.textContent = q.label;
+          btn.onclick = () => {
+            startD = addDays(today, 1);
+            endD   = addDays(startD, q.days - 1);
+            selecting = false; hoverD = null; activeQuick = q.days;
+            viewMonth = startD.getMonth(); viewYear = startD.getFullYear();
+            renderAll(); updateTrigger();
+          };
+          elQuickBar.appendChild(btn);
+        });
+      }
+
+      function renderMonths() {
+        elMonths.innerHTML = '';
+        for (let i = 0; i < 2; i++) {
+          let m = viewMonth + i, y = viewYear;
+          if (m > 11) { m -= 12; y++; }
+          elMonths.appendChild(buildMonth(y, m, i));
+        }
+      }
+
+      function buildMonth(year, month, idx) {
+        const wrap = document.createElement('div');
+
+        /* header */
+        const hdr = document.createElement('div');
+        hdr.className = 'cal-month-header';
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'cal-month-nav' + (idx > 0 ? ' hidden' : '');
+        prevBtn.innerHTML = '&#8249;';
+        prevBtn.onclick = () => { viewMonth--; if(viewMonth<0){viewMonth=11;viewYear--;} renderAll(); };
+        const title = document.createElement('div');
+        title.className = 'cal-month-title';
+        title.textContent = `${MONTHS[month]} ${year}`;
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'cal-month-nav' + (idx < 1 ? ' hidden' : '');
+        nextBtn.innerHTML = '&#8250;';
+        nextBtn.onclick = () => { viewMonth++; if(viewMonth>11){viewMonth=0;viewYear++;} renderAll(); };
+        hdr.appendChild(prevBtn); hdr.appendChild(title); hdr.appendChild(nextBtn);
+        wrap.appendChild(hdr);
+
+        /* weekday row */
+        const wdRow = document.createElement('div');
+        wdRow.className = 'cal-weekdays';
+        WDAYS.forEach(d => {
+          const s = document.createElement('div'); s.className = 'cal-weekday'; s.textContent = d; wdRow.appendChild(s);
+        });
+        wrap.appendChild(wdRow);
+
+        /* days grid */
+        const grid = document.createElement('div');
+        grid.className = 'cal-days';
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(year, month, d);
+          const cell = document.createElement('div');
+          cell.className = 'cal-day';
+
+          const isPast  = date < today;
+          const isToday = dKey(date) === dKey(today);
+          if (isPast)  cell.classList.add('disabled');
+          if (isToday) cell.classList.add('today');
+
+          /* range rendering */
+          const effEnd = (selecting && hoverD) ? hoverD : endD;
+          if (startD) {
+            const lo = effEnd ? (effEnd < startD ? effEnd : startD) : startD;
+            const hi = effEnd ? (effEnd > startD ? effEnd : startD) : null;
+            const isStart   = dKey(date) === dKey(lo);
+            const isEnd     = hi && dKey(date) === dKey(hi);
+            const isSameDay = hi && dKey(lo) === dKey(hi);
+            const inRange   = hi && date > lo && date < hi;
+
+            if (isStart) { cell.classList.add('selected-start'); if(isSameDay) cell.classList.add('same-day'); }
+            if (isEnd && !isSameDay) cell.classList.add('selected-end');
+            if (inRange) {
+              cell.classList.add('in-range');
+              /* round left edge on first col (Sunday) and right edge on last col (Saturday) */
+              if (date.getDay() === 0) cell.classList.add('range-row-start');
+              if (date.getDay() === 6) cell.classList.add('range-row-end');
+            }
+          }
+
+          cell.textContent = d;
+          if (!isPast) {
+            cell.onclick = () => handleClick(date);
+            cell.onmouseenter = () => { if (selecting) { hoverD = date; renderMonths(); } };
+          }
+          grid.appendChild(cell);
+        }
+
+        wrap.appendChild(grid);
+        return wrap;
+      }
+
+      function handleClick(date) {
+        if (!selecting || !startD) {
+          startD = date; endD = null; selecting = true; hoverD = null; activeQuick = null;
+        } else {
+          if (dKey(date) === dKey(startD)) { endD = date; }
+          else if (date < startD)          { endD = startD; startD = date; }
+          else                             { endD = date; }
+          selecting = false; hoverD = null;
+        }
+        renderAll(); updateTrigger(); updateFooter();
+      }
+
+      function renderAll() { renderQuickBar(); renderMonths(); updateFooter(); }
+
+      /* open / close panel */
+      function openPanel() {
+        panelOpen = true;
+        elPanel.style.display = 'block';
+        elTrigger.classList.add('open');
+        elTrigger.setAttribute('aria-expanded','true');
+        elTrigChev.style.transform = 'rotate(180deg)';
+        renderAll();
+      }
+      function closePanel() {
+        panelOpen = false;
+        elPanel.style.display = 'none';
+        elTrigger.classList.remove('open');
+        elTrigger.setAttribute('aria-expanded','false');
+        elTrigChev.style.transform = '';
+      }
+
+      elTrigger.addEventListener('click', e => { e.stopPropagation(); panelOpen ? closePanel() : openPanel(); });
+
+      document.addEventListener('click', e => {
+        if (!document.getElementById('cal-wrapper').contains(e.target)) closePanel();
+      });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+      elBtnClear.onclick = () => {
+        startD = null; endD = null; selecting = false; hoverD = null; activeQuick = null;
+        renderAll(); updateTrigger();
+      };
+      elBtnApply.onclick = () => closePanel();
+
+      /* init */
+      updateTrigger();
+    })();
+    </script>
+
   </body>
 </html>
