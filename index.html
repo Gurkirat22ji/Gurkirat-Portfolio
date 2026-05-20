@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -291,7 +292,12 @@
               <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Preferred Consular / Embassy Location</label>
               <button id="consular-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
                 class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
-                <span id="consular-label" class="truncate text-input-placeholder">Any Location</span>
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <div id="consular-chips" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
+                  <span id="consular-label" class="truncate text-input-placeholder">
+                    Select Consular Locations
+                  </span>
+                </div>
                 <i data-lucide="chevron-down" id="consular-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0"></i>
               </button>
               <div id="consular-menu" class="ddrop hidden absolute z-50 w-full mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
@@ -373,10 +379,7 @@
           </p>
           <div class="flex gap-1 items-end justify-center text-text-300 font-bold text-2xl my-4">
             <span class="mb-2">$</span>
-            <span id="fee-price" class="text-7xl font-bold leading-none">89</span>
-          </div>
-          <div id="fee-disc-row" class="mb-3 text-xs text-green-700 bg-green-50 rounded-full px-3 py-1 font-medium badge-pop">
-            <span id="fee-disc-text">40% window discount applied</span>
+            <span id="fee-price" class="text-7xl font-bold leading-none">0</span>
           </div>
           <button type="button"
             class="flex items-center justify-center bg-black border border-black hover:border-primary rounded-full text-white hover:text-primary px-5 py-2 text-sm font-normal transition-all duration-300 hover:scale-95 hover:shadow-lg gap-2">
@@ -520,45 +523,95 @@ const CONSULAR_LOCS = [
 ];
 
 /* ── SHARED STATE ───────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   SHARED STATE
+────────────────────────────────────────────────────────── */
+
 let state = {
-  country:     COUNTRIES[0],
-  visaType:    VISA_TYPES[1].items[0],   // F-1
-  apptType:    APPT_TYPES[0],            // Regular
-  applicants:  1,
-  biometrics:  ['New Delhi VAC'],
-  consular:    null,
-  calStart:    new Date(2026,4,21),
-  calEnd:      new Date(2026,8,10),
+  country: COUNTRIES[0],
+  visaType: VISA_TYPES[1].items[0],
+  apptType: APPT_TYPES[0],
+  applicants: 1,
+
+  biometrics: VAC_LOCATIONS.map(location => location.full),
+
+  // Multi-select consular locations
+  consular: [],
+
+  calStart: new Date(2026, 4, 21),
+  calEnd: new Date(2026, 8, 10),
 };
 
-const BASE_PRICE = 149;
-function calcWindowDiscount(days) {
-  if (days >= 30) return 40;
-  if (days >= 14) return 20;
-  if (days >= 7)  return 10;
-  return 0;
+
+/* ──────────────────────────────────────────────────────────
+   PRICING CONFIG
+────────────────────────────────────────────────────────── */
+
+const PRICING_BY_CONSULAR_COUNT = Object.freeze({
+  1: 155,
+  2: 130,
+  3: 105,
+  4: 85,
+  5: 75,
+});
+
+
+/* ──────────────────────────────────────────────────────────
+   PRICING HELPERS
+────────────────────────────────────────────────────────── */
+
+function getSelectedConsularCount() {
+  return state.consular.length;
 }
-function calcApptMultiplier(code) {
-  if (code === 'expedited') return 1.5;
-  if (code === 'waiver')    return 0.8;
-  return 1;
+
+function getSelectedWindowDays() {
+  if (!state.calStart || !state.calEnd) {
+    return 0;
+  }
+
+  return Math.round(
+    Math.abs(state.calEnd - state.calStart) / 86400000
+  );
 }
+
+function calculateDynamicPrice() {
+
+  // No biometrics selected
+  if (state.biometrics.length === 0) {
+    return 0;
+  }
+
+  const consularCount = getSelectedConsularCount();
+
+  return PRICING_BY_CONSULAR_COUNT[consularCount] ?? 0;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   FEE CARD UI UPDATE
+────────────────────────────────────────────────────────── */
+
 function updateFeeCard() {
-  const days     = state.calStart && state.calEnd
-    ? Math.round(Math.abs(state.calEnd - state.calStart)/86400000) : 0;
-  const disc     = calcWindowDiscount(days);
-  const mult     = calcApptMultiplier(state.apptType.code);
-  const price    = Math.round(BASE_PRICE * mult * (1 - disc/100) * state.applicants);
-  document.getElementById('fee-price').textContent      = price;
-  document.getElementById('fee-appt-type').textContent  = state.apptType.label;
-  document.getElementById('fee-visa-type').textContent  = state.visaType.code;
-  document.getElementById('fee-applicants').textContent = state.applicants;
-  document.getElementById('fee-window').textContent     = days;
-  const discRow = document.getElementById('fee-disc-row');
-  if (disc > 0) {
-    discRow.classList.remove('hidden');
-    document.getElementById('fee-disc-text').textContent = `${disc}% window discount applied`;
-  } else { discRow.classList.add('hidden'); }
+
+  const price = calculateDynamicPrice();
+
+  const days = getSelectedWindowDays();
+
+  document.getElementById('fee-price').textContent =
+    price;
+
+  document.getElementById('fee-appt-type').textContent =
+    state.apptType.label;
+
+  document.getElementById('fee-visa-type').textContent =
+    state.visaType.code;
+
+  document.getElementById('fee-applicants').textContent =
+    state.applicants;
+
+  document.getElementById('fee-window').textContent =
+    days;
+
 }
 
 /* ── GENERIC DROPDOWN HELPERS ───────────────────────────────── */
@@ -762,39 +815,149 @@ document.getElementById('biometrics-btn').addEventListener('click', e => {
 
 /* ── CONSULAR SINGLE-SELECT ─────────────────────────────────── */
 function renderConLabel() {
-  const lbl = document.getElementById('consular-label');
-  lbl.textContent = state.consular ? state.consular.label : 'Any Location';
-  lbl.style.color = state.consular ? '#0b1121' : '#b2b5c3';
-}
-function renderConOptions() {
-  const list = document.getElementById('consular-list');
-  list.innerHTML = '';
-  // "Any" option
-  const anyLi = document.createElement('li');
-  const anySel = state.consular === null;
-  anyLi.setAttribute('role','option'); anyLi.setAttribute('aria-selected', anySel);
-  anyLi.className = `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm${anySel?' sel text-text-300':' text-text-200'}`;
-  anyLi.innerHTML = `<span>Any Location</span>${checkSVG(anySel)}`;
-  anyLi.addEventListener('click', () => { state.consular=null; renderConLabel(); renderConOptions(); closeDD(document.getElementById('consular-menu'),document.getElementById('consular-chev'),document.getElementById('consular-btn')); updateFeeCard(); });
-  list.appendChild(anyLi);
-  const div = document.createElement('li'); div.setAttribute('role','separator'); div.className='border-t border-gray-100 my-1 mx-2'; list.appendChild(div);
 
-  CONSULAR_LOCS.forEach(c => {
-    const sel = state.consular && state.consular.label === c.label;
-    const li  = document.createElement('li');
-    li.setAttribute('role','option'); li.setAttribute('aria-selected', sel);
-    li.className = `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${sel?' sel':''}`;
-    li.innerHTML = `<div><span class="font-medium">${c.label}</span><br><span class="text-xs text-text-200">${c.note}</span></div>${checkSVG(sel)}`;
-    li.addEventListener('click', () => { state.consular=c; renderConLabel(); renderConOptions(); closeDD(document.getElementById('consular-menu'),document.getElementById('consular-chev'),document.getElementById('consular-btn')); updateFeeCard(); });
+  const chips =
+    document.getElementById('consular-chips');
+
+  const labelEl =
+    document.getElementById('consular-label');
+
+  chips.innerHTML = '';
+
+  if (!state.consular.length) {
+
+    labelEl.textContent =
+      'Select Consular Locations';
+
+    labelEl.style.color = '#b2b5c3';
+    labelEl.classList.remove('hidden');
+
+    return;
+  }
+
+  labelEl.classList.add('hidden');
+
+  state.consular.forEach(locationLabel => {
+    const chipLabel =
+      locationLabel.split('—')[0].trim();
+
+    const span =
+      document.createElement('span');
+
+    span.className =
+      'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 select-none';
+
+    span.innerHTML = `${chipLabel}<span role="button" tabindex="0" data-loc="${locationLabel}"
+      class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center"
+      aria-label="Remove ${chipLabel}">${xSVG}</span>`;
+
+    chips.appendChild(span);
+  });
+
+  chips.querySelectorAll('.chip-x').forEach(x => {
+    x.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleConsularSelection(x.dataset.loc);
+    });
+    x.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.stopPropagation();
+        toggleConsularSelection(x.dataset.loc);
+      }
+    });
+  });
+}
+
+
+function toggleConsularSelection(locationLabel) {
+
+  const alreadySelected =
+    state.consular.includes(locationLabel);
+
+  state.consular = alreadySelected
+    ? state.consular.filter(
+        item => item !== locationLabel
+      )
+    : [...state.consular, locationLabel];
+
+  renderConLabel();
+  renderConOptions();
+  updateFeeCard();
+}
+
+
+function renderConOptions() {
+
+  const list =
+    document.getElementById('consular-list');
+
+  list.innerHTML = '';
+
+  CONSULAR_LOCS.forEach(location => {
+
+    const isSelected =
+      state.consular.includes(location.label);
+
+    const li =
+      document.createElement('li');
+
+    li.setAttribute('role', 'option');
+
+    li.setAttribute(
+      'aria-selected',
+      isSelected
+    );
+
+    li.className =
+      `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${
+        isSelected ? ' sel' : ''
+      }`;
+
+    li.innerHTML = `
+      <div>
+        <span class="font-medium">
+          ${location.label}
+        </span>
+        <br>
+        <span class="text-xs text-text-200">
+          ${location.note}
+        </span>
+      </div>
+
+      ${checkSVG(isSelected)}
+    `;
+
+    li.addEventListener('click', () => {
+      toggleConsularSelection(location.label);
+    });
+
     list.appendChild(li);
   });
 }
 
-document.getElementById('consular-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const m=document.getElementById('consular-menu'),c=document.getElementById('consular-chev'),b=document.getElementById('consular-btn');
-  toggleDD(m,c,b,renderConOptions);
-});
+
+document
+  .getElementById('consular-btn')
+  .addEventListener('click', e => {
+
+    e.stopPropagation();
+
+    const menu =
+      document.getElementById('consular-menu');
+
+    const chev =
+      document.getElementById('consular-chev');
+
+    const btn =
+      document.getElementById('consular-btn');
+
+    toggleDD(
+      menu,
+      chev,
+      btn,
+      renderConOptions
+    );
+  });
 
 /* ── APPLICANTS INPUT ───────────────────────────────────────── */
 document.getElementById('applicants-input').addEventListener('input', e => {
@@ -876,9 +1039,7 @@ document.getElementById('applicants-input').addEventListener('input', e => {
     if (!startD) { eFooter.innerHTML = 'Pick a <strong>start</strong> date'; return; }
     if (!endD)   { eFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; pick end date`; return; }
     const d = daysDiff(startD,endD);
-    const disc = calcWindowDiscount(d);
-    eFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; <strong>${fmt(endD)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}` +
-      (disc ? ` &nbsp;<span style="color:#16a34a;font-weight:600">−${disc}% off</span>` : '');
+    eFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; <strong>${fmt(endD)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}`;
   }
 
   function renderQuickBar() {
@@ -1039,3 +1200,4 @@ updateFeeCard();
 </script>
 </body>
 </html>
+
