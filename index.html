@@ -1,1203 +1,857 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Estimate your service fee</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#f15a22',
-            secondary: '#3ee999',
-            tertiary: '#fceacc',
-            'text-200': '#646464',
-            'text-300': '#101010',
-            'input-bg': '#ffffff',
-            'input-border': '#d4d7e3',
-            'input-text': '#0b1121',
-            'input-placeholder': '#b2b5c3',
-            'page-bg': '#f4f3ee',
-          },
-          fontFamily: { inter: ['Inter','sans-serif'] },
-        },
-      },
-    };
-  </script>
-  <style>
-    body { font-family:'Inter',sans-serif; }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { opacity:1; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Estimate your service fee</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: {
+      primary:'#f15a22', secondary:'#3ee999', tertiary:'#fceacc',
+      't200':'#646464', 't300':'#101010',
+      'ib':'#ffffff', 'iborder':'#d4d7e3', 'itext':'#0b1121', 'iph':'#b2b5c3',
+      'pgbg':'#f4f3ee',
+    },
+    fontFamily:{ inter:['Inter','sans-serif'] },
+  }}};
+</script>
+<style>
+body{font-family:'Inter',sans-serif}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{opacity:1}
 
-    /* ── Shared dropdown animation ─────────────────────────── */
-    .ddrop {
-      transform-origin:top;
-      animation:ddIn .14s ease-out forwards;
-    }
-    @keyframes ddIn {
-      from { opacity:0; transform:scaleY(.93) translateY(-4px); }
-      to   { opacity:1; transform:scaleY(1)   translateY(0);    }
-    }
-    .ddrop.closing { animation:ddOut .11s ease-in forwards; }
-    @keyframes ddOut {
-      from { opacity:1; transform:scaleY(1)   translateY(0);    }
-      to   { opacity:0; transform:scaleY(.93) translateY(-4px); }
-    }
+/* ─ Dropdown animations ─ */
+.dd{transform-origin:top;animation:ddIn .14s ease-out forwards}
+@keyframes ddIn{from{opacity:0;transform:scaleY(.93) translateY(-4px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
+.dd.out{animation:ddOut .11s ease-in forwards}
+@keyframes ddOut{from{opacity:1;transform:scaleY(1) translateY(0)}to{opacity:0;transform:scaleY(.93) translateY(-4px)}}
 
-    /* chevron spin */
-    .chev { transition:transform .2s ease; }
-    .chev.open { transform:rotate(180deg); }
+/* ─ Option rows ─ */
+.opt{transition:background .08s;cursor:pointer}
+.opt:hover{background:#f9f5f1}
+.opt.on{background:#fef3ea}
+.grp{font-size:11px;font-weight:600;letter-spacing:.06em;color:#b2b5c3;padding:8px 14px 4px;text-transform:uppercase}
 
-    /* option rows */
-    .ddopt { transition:background .08s; }
-    .ddopt:hover    { background:#f9f5f1; }
-    .ddopt.sel      { background:#fef3ea; }
+/* ─ Search input ─ */
+.dds{width:100%;border:none;outline:none;font-size:13px;padding:8px 12px;background:#f9f9f8;color:#0b1121;font-family:'Inter',sans-serif}
+.dds::placeholder{color:#b2b5c3}
 
-    /* group label */
-    .ddgroup {
-      font-size:11px; font-weight:600; letter-spacing:.06em;
-      color:#b2b5c3; padding:8px 14px 4px; text-transform:uppercase;
-    }
+/* ─ Chevron ─ */
+.chv{transition:transform .2s ease}
+.chv.open{transform:rotate(180deg)}
 
-    /* search box inside dropdown */
-    .dd-search {
-      width:100%; border:none; outline:none; font-size:13px;
-      padding:8px 12px; background:#f9f9f8; color:#0b1121;
-      font-family:'Inter',sans-serif;
-    }
-    .dd-search::placeholder { color:#b2b5c3; }
-
-    /* ── Calendar ──────────────────────────────────────────── */
-    .cal-trigger {
-      display:flex; align-items:center; justify-content:space-between;
-      gap:8px; padding:0 14px; height:44px;
-      background:#fff; border:1px solid #d4d7e3; border-radius:8px;
-      cursor:pointer; width:100%; font-size:14px; color:#0b1121;
-      font-family:'Inter',sans-serif; transition:border-color .15s;
-    }
-    .cal-trigger:hover { border-color:#9ca3af; }
-    .cal-trigger.open  { border-color:#0b1121; }
-    .cal-trigger-left  { display:flex; align-items:center; gap:10px; min-width:0; }
-    .cal-trigger-range { font-size:14px; font-weight:500; color:#0b1121; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .cal-trigger-range.ph { color:#b2b5c3; font-weight:400; }
-    .cal-trigger-dur {
-      font-size:11px; color:#646464; background:#f4f3ee;
-      padding:2px 8px; border-radius:99px; white-space:nowrap;
-    }
-    .cal-panel {
-      position:absolute; z-index:70; left:0;
-      background:#fff; border:1px solid #d4d7e3; border-radius:14px;
-      margin-top:6px; box-shadow:0 8px 32px rgba(0,0,0,.11);
-      width:max-content; min-width:100%;
-      animation:calIn .15s ease-out forwards;
-    }
-    @keyframes calIn  { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-    .cal-panel.closing { animation:calOut .11s ease-in forwards; }
-    @keyframes calOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-6px)} }
-    .cal-panel-inner { padding:18px 20px 16px; }
-    .cal-quick-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid #f0f0ef; }
-    .cal-quick {
-      font-size:12px; padding:5px 12px; border-radius:99px;
-      border:1px solid #d4d7e3; background:transparent; color:#646464;
-      cursor:pointer; transition:all .12s; white-space:nowrap; font-family:'Inter',sans-serif;
-    }
-    .cal-quick:hover  { border-color:#f15a22; color:#f15a22; background:#fff8f5; }
-    .cal-quick.active { background:#f15a22; color:#fff; border-color:#f15a22; }
-    .cal-months { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
-    @media(max-width:580px){ .cal-months{ grid-template-columns:1fr; } }
-    .cal-month-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .cal-month-nav {
-      background:none; border:none; cursor:pointer; color:#646464;
-      padding:4px 6px; border-radius:6px; font-size:16px; line-height:1;
-      transition:background .1s,color .1s;
-    }
-    .cal-month-nav:hover  { background:#f4f3ee; color:#101010; }
-    .cal-month-nav.hidden { visibility:hidden; pointer-events:none; }
-    .cal-month-title { font-size:13px; font-weight:600; color:#101010; }
-    .cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
-    .cal-weekday  { font-size:11px; color:#b2b5c3; padding:2px 0; }
-    .cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
-    .cal-day {
-      aspect-ratio:1; display:flex; align-items:center; justify-content:center;
-      font-size:13px; cursor:pointer; border-radius:6px;
-      transition:background .1s,color .1s; position:relative;
-      color:#101010; user-select:none;
-    }
-    .cal-day:hover:not(.disabled):not(.selected-start):not(.selected-end) { background:#f4f3ee; }
-    .cal-day.disabled { color:#b2b5c3; opacity:.45; pointer-events:none; }
-    .cal-day.today    { font-weight:700; }
-    .cal-day.today::after {
-      content:''; position:absolute; bottom:3px; left:50%;
-      transform:translateX(-50%); width:4px; height:4px;
-      border-radius:50%; background:#f15a22;
-    }
-    .cal-day.selected-start,
-    .cal-day.selected-end {
-      background:#f15a22 !important; color:#fff !important;
-      font-weight:600; border-radius:6px;
-    }
-    .cal-day.in-range { background:#fceacc; color:#101010; border-radius:0; }
-    .cal-day.selected-start:not(.same-day) { border-radius:6px 0 0 6px; }
-    .cal-day.selected-end:not(.same-day)   { border-radius:0 6px 6px 0; }
-    .cal-day.same-day { border-radius:6px !important; }
-    .cal-day.range-row-start { border-radius:6px 0 0 6px; }
-    .cal-day.range-row-end   { border-radius:0 6px 6px 0; }
-    .cal-footer {
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid #f0f0ef;
-    }
-    .cal-footer-info { font-size:12px; color:#646464; }
-    .cal-footer-info strong { color:#101010; font-weight:600; }
-    .cal-footer-btns { display:flex; gap:8px; }
-    .cal-btn {
-      font-size:13px; padding:7px 16px; border-radius:99px;
-      cursor:pointer; border:1px solid #d4d7e3; background:transparent;
-      color:#646464; transition:all .12s; font-family:'Inter',sans-serif;
-    }
-    .cal-btn:hover { border-color:#9ca3af; color:#101010; }
-    .cal-btn-apply {
-      background:#101010; color:#fff; border-color:#101010; font-weight:500;
-    }
-    .cal-btn-apply:hover { background:#f15a22; border-color:#f15a22; color:#fff; }
-    .cal-hint { font-size:12px; color:#646464; margin-top:6px; display:flex; align-items:center; gap:6px; }
-    .cal-hint-dot { width:6px; height:6px; border-radius:50%; background:#3ee999; flex-shrink:0; }
-
-    /* fee card discount badge pop */
-    .badge-pop { animation:bPop .25s cubic-bezier(.34,1.56,.64,1) forwards; }
-    @keyframes bPop { from{opacity:0;transform:scale(.7)} to{opacity:1;transform:scale(1)} }
-  </style>
+/* ─ Calendar ─ */
+.cal-btn-trig{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;height:44px;background:#fff;border:1px solid #d4d7e3;border-radius:8px;cursor:pointer;width:100%;font-size:14px;color:#0b1121;font-family:'Inter',sans-serif;transition:border-color .15s}
+.cal-btn-trig:hover{border-color:#9ca3af}
+.cal-btn-trig.open{border-color:#0b1121}
+.cal-trig-range{font-size:14px;font-weight:500;color:#0b1121;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-trig-range.ph{color:#b2b5c3;font-weight:400}
+.cal-dur{font-size:11px;color:#646464;background:#f4f3ee;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.cal-panel{position:absolute;z-index:70;left:0;background:#fff;border:1px solid #d4d7e3;border-radius:14px;margin-top:6px;box-shadow:0 8px 32px rgba(0,0,0,.11);width:max-content;min-width:100%;animation:calIn .15s ease-out forwards}
+@keyframes calIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.cal-panel.out{animation:calOut .11s ease-in forwards}
+@keyframes calOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-6px)}}
+.cal-inner{padding:18px 20px 16px}
+.cal-qbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f0f0ef}
+.cq{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid #d4d7e3;background:transparent;color:#646464;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:'Inter',sans-serif}
+.cq:hover{border-color:#f15a22;color:#f15a22;background:#fff8f5}
+.cq.on{background:#f15a22;color:#fff;border-color:#f15a22}
+.cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:580px){.cal-grid{grid-template-columns:1fr}}
+.cal-mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-mnav{background:none;border:none;cursor:pointer;color:#646464;padding:4px 6px;border-radius:6px;font-size:16px;line-height:1;transition:background .1s,color .1s}
+.cal-mnav:hover{background:#f4f3ee;color:#101010}
+.cal-mnav.hide{visibility:hidden;pointer-events:none}
+.cal-mtitle{font-size:13px;font-weight:600;color:#101010}
+.cal-wdays,.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-wdays{text-align:center;margin-bottom:4px}
+.cal-wd{font-size:11px;color:#b2b5c3;padding:2px 0}
+.cal-days{gap:1px}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;border-radius:6px;transition:background .1s,color .1s;position:relative;color:#101010;user-select:none}
+.day:hover:not(.dis):not(.s0):not(.s1){background:#f4f3ee}
+.day.dis{color:#b2b5c3;opacity:.45;pointer-events:none}
+.day.tod{font-weight:700}
+.day.tod::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#f15a22}
+.day.s0,.day.s1{background:#f15a22!important;color:#fff!important;font-weight:600;border-radius:6px}
+.day.inr{background:#fceacc;color:#101010;border-radius:0}
+.day.s0:not(.sd){border-radius:6px 0 0 6px}
+.day.s1:not(.sd){border-radius:0 6px 6px 0}
+.day.sd{border-radius:6px!important}
+.day.rl{border-radius:6px 0 0 6px}
+.day.rr{border-radius:0 6px 6px 0}
+.cal-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid #f0f0ef}
+.cal-finfo{font-size:12px;color:#646464}
+.cal-finfo strong{color:#101010;font-weight:600}
+.cbtn{font-size:13px;padding:7px 16px;border-radius:99px;cursor:pointer;border:1px solid #d4d7e3;background:transparent;color:#646464;transition:all .12s;font-family:'Inter',sans-serif}
+.cbtn:hover{border-color:#9ca3af;color:#101010}
+.cbtn.apply{background:#101010;color:#fff;border-color:#101010;font-weight:500}
+.cbtn.apply:hover{background:#f15a22;border-color:#f15a22;color:#fff}
+.cal-hint{font-size:12px;color:#646464;margin-top:6px;display:flex;align-items:center;gap:6px}
+.cal-hint-dot{width:6px;height:6px;border-radius:50%;background:#3ee999;flex-shrink:0}
+</style>
 </head>
-<body class="bg-page-bg min-h-screen px-4 md:px-6 py-12 flex flex-col items-center">
+<body class="bg-pgbg min-h-screen px-4 md:px-6 py-12 flex flex-col items-center">
 
 <div class="w-full max-w-[1200px] flex flex-col gap-5">
 
   <!-- Header -->
-  <div class="flex flex-col flex-1 mb-4">
-    <div class="flex mb-2">
-      <span class="text-sm bg-tertiary rounded-full px-3 py-1 text-text-300 font-normal tracking-wide">PRICING</span>
-    </div>
-    <h1 class="mt-1 text-text-300 text-5xl md:text-6xl font-bold leading-none">
-      Estimate your service fee
-    </h1>
+  <div class="flex flex-col mb-4">
+    <span class="text-sm bg-tertiary rounded-full px-3 py-1 text-t300 font-normal tracking-wide w-fit mb-2">PRICING</span>
+    <h1 class="text-t300 text-5xl md:text-6xl font-bold leading-none">Estimate your service fee</h1>
   </div>
 
-  <!-- Main Card -->
+  <!-- Card -->
   <div class="flex flex-col gap-6 p-6 md:p-8 rounded-2xl bg-white shadow-sm border border-gray-100">
+    <div class="flex flex-col lg:flex-row items-start gap-6">
 
-    <div class="flex flex-col lg:flex-row items-start gap-6 w-full">
+      <!-- LEFT -->
+      <div class="flex-1 min-w-0 space-y-6">
+        <h3 class="text-lg font-semibold text-t300">Visa Application Details</h3>
 
-      <!-- ── LEFT: Form ── -->
-      <div class="flex-1 min-w-0">
-        <h3 class="text-lg font-semibold text-text-300 mb-5">Visa Application Details</h3>
+        <!-- Row 1 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
-        <div class="space-y-6">
-
-          <!-- Row 1: 4 fields -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-
-            <!-- Application Country -->
-            <div class="w-full relative" id="country-wrapper">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Application Country</label>
-              <button id="country-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
-                class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm focus:outline-none hover:border-gray-400 transition-colors">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span id="country-flag" class="text-base flex-shrink-0">🇮🇳</span>
-                  <span id="country-label" class="truncate text-input-text font-normal">India</span>
-                </div>
-                <i data-lucide="chevron-down" id="country-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0"></i>
-              </button>
-              <div id="country-menu" class="ddrop hidden absolute z-50 w-64 mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
-                <div class="border-b border-gray-100 px-1 pt-1">
-                  <input id="country-search" type="text" class="dd-search rounded-t-xl" placeholder="Search country…" autocomplete="off"/>
-                </div>
-                <ul id="country-list" class="py-1 max-h-56 overflow-y-auto" role="listbox"></ul>
+          <!-- Country -->
+          <div class="relative" id="wr-country">
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Application Country</label>
+            <button id="btn-country" type="button" aria-haspopup="listbox" aria-expanded="false"
+              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
+              <div class="flex items-center gap-2 min-w-0">
+                <span id="country-flag" class="flex-shrink-0">🇮🇳</span>
+                <span id="country-lbl" class="truncate">India</span>
               </div>
-            </div>
-
-            <!-- Visa Type -->
-            <div class="w-full relative" id="visatype-wrapper">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Visa Type</label>
-              <button id="visatype-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
-                class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm focus:outline-none hover:border-gray-400 transition-colors">
-                <span id="visatype-label" class="truncate text-input-text">F-1 — Student</span>
-                <i data-lucide="chevron-down" id="visatype-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0"></i>
-              </button>
-              <div id="visatype-menu" class="ddrop hidden absolute z-50 w-72 mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
-                <div class="border-b border-gray-100 px-1 pt-1">
-                  <input id="visatype-search" type="text" class="dd-search" placeholder="Search visa type…" autocomplete="off"/>
-                </div>
-                <ul id="visatype-list" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
+              <i data-lucide="chevron-down" id="chv-country" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            </button>
+            <div id="menu-country" class="dd hidden absolute z-50 w-64 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
+              <div class="border-b border-gray-100 px-1 pt-1">
+                <input id="s-country" type="text" class="dds" placeholder="Search country…" autocomplete="off"/>
               </div>
+              <ul id="list-country" class="py-1 max-h-56 overflow-y-auto" role="listbox"></ul>
             </div>
-
-            <!-- Appointment Type -->
-            <div class="w-full relative" id="appttype-wrapper">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Appointment Type</label>
-              <button id="appttype-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
-                class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm focus:outline-none hover:border-gray-400 transition-colors">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span id="appttype-dot" class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
-                  <span id="appttype-label" class="truncate text-input-text">Regular</span>
-                </div>
-                <i data-lucide="chevron-down" id="appttype-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0"></i>
-              </button>
-              <div id="appttype-menu" class="ddrop hidden absolute z-50 w-72 mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
-                <ul id="appttype-list" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
-              </div>
-            </div>
-
-            <!-- Total Applicants -->
-            <div class="w-full">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Total Applicants</label>
-              <input id="applicants-input" type="number" name="applicants" value="1" placeholder="Enter" min="1" max="20"
-                class="w-full h-11 px-3.5 py-2 bg-input-bg border border-input-border rounded-lg text-sm text-input-text focus:outline-none focus:border-input-text placeholder-input-placeholder"/>
-            </div>
-
-          </div><!-- /Row 1 -->
-
-          <!-- Info banner -->
-          <div class="min-h-7" aria-live="polite">
-            <p class="text-sm text-text-200 flex items-center gap-2 border-l-2 border-primary pl-3 py-1">
-              <i data-lucide="calendar" class="w-4 h-4 text-primary flex-shrink-0"></i>
-              <span>Latest slot seen in your preferences: 2026-07-27, reported an hour ago.</span>
-            </p>
           </div>
 
-          <!-- Row 2: Location dropdowns -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <!-- Biometrics multi-select -->
-            <div class="w-full relative" id="biometrics-wrapper">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Preferred Biometrics Locations (VAC)</label>
-              <button id="biometrics-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
-                class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
-                <div id="biometrics-chips" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
-                <span id="biometrics-ph" class="text-input-placeholder text-sm hidden flex-1">Select VAC location(s)</span>
-                <i data-lucide="chevron-down" id="biometrics-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
-              </button>
-              <div id="biometrics-menu" class="ddrop hidden absolute z-50 w-full mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
-                <ul id="biometrics-list" class="py-1 max-h-52 overflow-y-auto" role="listbox" aria-multiselectable="true"></ul>
+          <!-- Visa Type -->
+          <div class="relative" id="wr-vtype">
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Visa Type</label>
+            <button id="btn-vtype" type="button" aria-haspopup="listbox" aria-expanded="false"
+              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
+              <span id="vtype-lbl" class="truncate">F-1 — Academic Student</span>
+              <i data-lucide="chevron-down" id="chv-vtype" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            </button>
+            <div id="menu-vtype" class="dd hidden absolute z-50 w-72 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
+              <div class="border-b border-gray-100 px-1 pt-1">
+                <input id="s-vtype" type="text" class="dds" placeholder="Search visa type…" autocomplete="off"/>
               </div>
+              <ul id="list-vtype" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
             </div>
-
-            <!-- Consular single-select -->
-            <div class="w-full relative" id="consular-wrapper">
-              <label class="block text-sm text-text-200 font-normal mb-1 ml-0.5">Preferred Consular / Embassy Location</label>
-              <button id="consular-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
-                class="w-full min-h-[2.75rem] px-3.5 py-2 text-left bg-input-bg border border-input-border rounded-lg flex items-center justify-between gap-2 text-sm text-input-text focus:outline-none hover:border-gray-400 transition-colors">
-                <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <div id="consular-chips" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
-                  <span id="consular-label" class="truncate text-input-placeholder">
-                    Select Consular Locations
-                  </span>
-                </div>
-                <i data-lucide="chevron-down" id="consular-chev" class="chev w-4 h-4 text-gray-400 flex-shrink-0"></i>
-              </button>
-              <div id="consular-menu" class="ddrop hidden absolute z-50 w-full mt-1 bg-white border border-input-border rounded-xl shadow-lg overflow-hidden">
-                <ul id="consular-list" class="py-1 max-h-52 overflow-y-auto" role="listbox"></ul>
-              </div>
-            </div>
-
           </div>
-          <p class="italic text-sm text-text-200 -mt-2">More locations yield early appointments; costs less.</p>
 
-          <!-- Row 3: Calendar + Notice -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Appointment Type -->
+          <div class="relative" id="wr-atype">
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Appointment Type</label>
+            <button id="btn-atype" type="button" aria-haspopup="listbox" aria-expanded="false"
+              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
+              <div class="flex items-center gap-2 min-w-0">
+                <span id="atype-dot" class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
+                <span id="atype-lbl" class="truncate">Regular</span>
+              </div>
+              <i data-lucide="chevron-down" id="chv-atype" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            </button>
+            <div id="menu-atype" class="dd hidden absolute z-50 w-72 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
+              <ul id="list-atype" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
+            </div>
+          </div>
 
-            <!-- Calendar date-range picker -->
-            <div>
-              <label class="block text-sm font-medium text-text-200 mb-1 ml-0.5">Preferred Appointment Window</label>
-              <div class="relative" id="cal-wrapper">
-                <button type="button" class="cal-trigger" id="calTrigger" aria-haspopup="true" aria-expanded="false">
-                  <div class="cal-trigger-left">
-                    <i data-lucide="calendar" style="width:16px;height:16px;color:#f15a22;flex-shrink:0"></i>
-                    <span class="cal-trigger-range" id="calTriggerText">05/21/2026 → 09/10/2026</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <span class="cal-trigger-dur" id="calTriggerDur">113 days</span>
-                    <i data-lucide="chevron-down" id="calTriggerChev" style="width:16px;height:16px;color:#646464;transition:transform .2s"></i>
-                  </div>
-                </button>
-                <div class="cal-panel" id="calPanel" style="display:none">
-                  <div class="cal-panel-inner">
-                    <div class="cal-quick-bar" id="calQuickBar"></div>
-                    <div class="cal-months" id="calMonths"></div>
-                    <div class="cal-footer">
-                      <div class="cal-footer-info" id="calFooterInfo">Select a start date</div>
-                      <div class="cal-footer-btns">
-                        <button type="button" class="cal-btn" id="calBtnClear">Clear</button>
-                        <button type="button" class="cal-btn cal-btn-apply" id="calBtnApply">Apply</button>
-                      </div>
+          <!-- Applicants -->
+          <div>
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Total Applicants</label>
+            <input id="inp-applicants" type="number" value="1" min="1" max="20" placeholder="Enter"
+              class="w-full h-11 px-3.5 py-2 bg-ib border border-iborder rounded-lg text-sm text-itext focus:outline-none focus:border-itext placeholder-iph"/>
+          </div>
+        </div>
+
+        <!-- Info banner -->
+        <p class="text-sm text-t200 flex items-center gap-2 border-l-2 border-primary pl-3 py-1">
+          <i data-lucide="calendar" class="w-4 h-4 text-primary flex-shrink-0"></i>
+          Latest slot seen in your preferences: 2026-07-27, reported an hour ago.
+        </p>
+
+        <!-- Row 2: Locations -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <!-- Biometrics multi-select -->
+          <div class="relative" id="wr-bio">
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Preferred Biometrics Locations (VAC)</label>
+            <button id="btn-bio" type="button" aria-haspopup="listbox" aria-expanded="false"
+              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
+              <div id="chips-bio" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
+              <span id="ph-bio" class="text-iph text-sm hidden flex-1">Select VAC location(s)</span>
+              <i data-lucide="chevron-down" id="chv-bio" class="chv w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
+            </button>
+            <div id="menu-bio" class="dd hidden absolute z-50 w-full mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
+              <ul id="list-bio" class="py-1 max-h-52 overflow-y-auto" role="listbox" aria-multiselectable="true"></ul>
+            </div>
+          </div>
+
+          <!-- Consular multi-select -->
+          <div class="relative" id="wr-con">
+            <label class="block text-sm text-t200 mb-1 ml-0.5">Preferred Consular / Embassy Location</label>
+            <button id="btn-con" type="button" aria-haspopup="listbox" aria-expanded="false"
+              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
+              <div id="chips-con" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
+              <span id="ph-con" class="text-iph text-sm flex-1">Select Consular Locations</span>
+              <i data-lucide="chevron-down" id="chv-con" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            </button>
+            <div id="menu-con" class="dd hidden absolute z-50 w-full mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
+              <ul id="list-con" class="py-1 max-h-52 overflow-y-auto" role="listbox" aria-multiselectable="true"></ul>
+            </div>
+          </div>
+        </div>
+        <p class="italic text-sm text-t200 -mt-2">More locations yield early appointments; costs less.</p>
+
+        <!-- Row 3: Calendar + Notice -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <!-- Calendar -->
+          <div>
+            <label class="block text-sm font-medium text-t200 mb-1 ml-0.5">Preferred Appointment Window</label>
+            <div class="relative" id="wr-cal">
+              <button type="button" id="cal-trig" class="cal-btn-trig" aria-haspopup="true" aria-expanded="false">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                  <i data-lucide="calendar" style="width:16px;height:16px;color:#f15a22;flex-shrink:0"></i>
+                  <span class="cal-trig-range" id="cal-range-txt">05/21/2026 → 09/10/2026</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="cal-dur" id="cal-dur-txt">113 days</span>
+                  <i data-lucide="chevron-down" id="chv-cal" style="width:16px;height:16px;color:#646464;transition:transform .2s"></i>
+                </div>
+              </button>
+              <div class="cal-panel" id="cal-panel" style="display:none">
+                <div class="cal-inner">
+                  <div class="cal-qbar" id="cal-qbar"></div>
+                  <div class="cal-grid" id="cal-grid"></div>
+                  <div class="cal-foot">
+                    <div class="cal-finfo" id="cal-foot-info">Select a start date</div>
+                    <div style="display:flex;gap:8px">
+                      <button type="button" class="cbtn" id="cal-clear">Clear</button>
+                      <button type="button" class="cbtn apply" id="cal-apply">Apply</button>
                     </div>
                   </div>
                 </div>
               </div>
-              <p class="cal-hint" id="calHint">
-                <span class="cal-hint-dot"></span>
-                <span id="calHintText">Wider window = more slot options, lower cost</span>
-              </p>
             </div>
-
-            <!-- Notice Period -->
-            <div>
-              <label for="notice_days" class="text-sm font-medium text-text-200 mb-1 ml-0.5 inline-flex items-center gap-1.5">
-                Notice Period
-                <button type="button" aria-label="Minimum days before appointment" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                  <i data-lucide="info" class="w-4 h-4"></i>
-                </button>
-              </label>
-              <div class="flex items-center gap-2">
-                <input id="notice_days" type="number" inputmode="numeric" min="0" max="90" step="1"
-                  placeholder="3" value="3" name="min_lead_time_days"
-                  class="w-20 h-11 px-3 py-2 bg-input-bg border border-input-border rounded-lg text-input-text focus:outline-none focus:border-gray-500 placeholder-input-placeholder text-sm text-center"/>
-                <span class="text-sm text-text-200">days</span>
-              </div>
-              <p class="text-sm text-text-200 mt-2">Enter <strong>0</strong> to allow next-day appointments.</p>
+            <div class="cal-hint">
+              <span class="cal-hint-dot"></span>
+              <span id="cal-hint-txt">Wider window = more slot options, lower cost</span>
             </div>
+          </div>
 
-          </div><!-- /Row 3 -->
+          <!-- Notice Period -->
+          <div>
+            <label for="inp-notice" class="text-sm font-medium text-t200 mb-1 ml-0.5 inline-flex items-center gap-1.5">
+              Notice Period
+              <button type="button" aria-label="Minimum days before appointment" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <i data-lucide="info" class="w-4 h-4"></i>
+              </button>
+            </label>
+            <div class="flex items-center gap-2">
+              <input id="inp-notice" type="number" inputmode="numeric" min="0" max="90" value="3"
+                class="w-20 h-11 px-3 py-2 bg-ib border border-iborder rounded-lg text-itext focus:outline-none focus:border-gray-500 text-sm text-center"/>
+              <span class="text-sm text-t200">days</span>
+            </div>
+            <p class="text-sm text-t200 mt-2">Enter <strong>0</strong> to allow next-day appointments.</p>
+          </div>
+        </div>
 
-        </div><!-- /space-y-6 -->
       </div><!-- /left -->
 
-      <!-- ── RIGHT: Service Fee Card ── -->
+      <!-- RIGHT: Fee Card -->
       <div class="w-full lg:w-[300px] lg:flex-shrink-0">
         <div class="bg-tertiary p-8 rounded-2xl flex flex-col items-center text-center">
-          <h3 class="text-lg font-semibold text-text-300">Service Fee</h3>
-          <p id="fee-desc" class="text-sm text-text-200 mt-2 leading-relaxed">
-            The cost to book a <span id="fee-appt-type">Regular</span>
-            <span id="fee-visa-type">F-1</span> visa appointment for
-            <span id="fee-applicants">1</span> applicant(s) within a
-            <span id="fee-window">113</span>-day window is
+          <h3 class="text-lg font-semibold text-t300">Service Fee</h3>
+          <p class="text-sm text-t200 mt-2 leading-relaxed">
+            The cost to book a <span id="fc-atype">Regular</span>
+            <span id="fc-vtype">F-1</span> visa appointment for
+            <span id="fc-applicants">1</span> applicant(s) within a
+            <span id="fc-window">113</span>-day window is
           </p>
-          <div class="flex gap-1 items-end justify-center text-text-300 font-bold text-2xl my-4">
+          <div class="flex gap-1 items-end justify-center text-t300 font-bold text-2xl my-4">
             <span class="mb-2">$</span>
-            <span id="fee-price" class="text-7xl font-bold leading-none">0</span>
+            <span id="fc-price" class="text-7xl font-bold leading-none">75</span>
+          </div>
+          <div id="fc-disc" class="mb-3 text-xs text-green-700 bg-green-50 rounded-full px-3 py-1 font-medium hidden">
+            <span id="fc-disc-txt"></span>
           </div>
           <button type="button"
-            class="flex items-center justify-center bg-black border border-black hover:border-primary rounded-full text-white hover:text-primary px-5 py-2 text-sm font-normal transition-all duration-300 hover:scale-95 hover:shadow-lg gap-2">
+            class="flex items-center gap-2 bg-black border border-black hover:border-primary rounded-full text-white hover:text-primary px-5 py-2 text-sm transition-all duration-300 hover:scale-95 hover:shadow-lg">
             <span>Pay Now</span>
             <i data-lucide="chevron-down" class="w-3 h-3"></i>
           </button>
         </div>
       </div>
 
-    </div><!-- /top-row -->
+    </div><!-- /top row -->
 
-    <!-- Bottom trust bar -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full pt-6 border-t border-gray-200 items-center justify-items-center text-center text-primary text-sm">
+    <!-- Trust bar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-gray-200 text-center text-primary text-sm">
       <span>✓ Track the progress online</span>
       <span>✓ Dedicated human assistance</span>
       <span>✓ 100% Refund</span>
     </div>
+  </div>
+</div>
 
-  </div><!-- /main card -->
-</div><!-- /max-w -->
-
-<!-- ═══════════════════════════════════════════════════════════════
-     JavaScript
-════════════════════════════════════════════════════════════════ -->
 <script>
 (() => {
 'use strict';
 
-/* ── DATA ───────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────
+   DATA
+───────────────────────────────────────── */
 const COUNTRIES = [
-  { code:'IN', flag:'🇮🇳', name:'India' },
-  { code:'PK', flag:'🇵🇰', name:'Pakistan' },
-  { code:'BD', flag:'🇧🇩', name:'Bangladesh' },
-  { code:'NP', flag:'🇳🇵', name:'Nepal' },
-  { code:'LK', flag:'🇱🇰', name:'Sri Lanka' },
-  { code:'CN', flag:'🇨🇳', name:'China' },
-  { code:'PH', flag:'🇵🇭', name:'Philippines' },
-  { code:'MX', flag:'🇲🇽', name:'Mexico' },
-  { code:'BR', flag:'🇧🇷', name:'Brazil' },
-  { code:'NG', flag:'🇳🇬', name:'Nigeria' },
-  { code:'GH', flag:'🇬🇭', name:'Ghana' },
-  { code:'ET', flag:'🇪🇹', name:'Ethiopia' },
-  { code:'EG', flag:'🇪🇬', name:'Egypt' },
-  { code:'CO', flag:'🇨🇴', name:'Colombia' },
-  { code:'VN', flag:'🇻🇳', name:'Vietnam' },
-  { code:'ID', flag:'🇮🇩', name:'Indonesia' },
-  { code:'TR', flag:'🇹🇷', name:'Turkey' },
-  { code:'KR', flag:'🇰🇷', name:'South Korea' },
-  { code:'JP', flag:'🇯🇵', name:'Japan' },
-  { code:'GB', flag:'🇬🇧', name:'United Kingdom' },
-  { code:'DE', flag:'🇩🇪', name:'Germany' },
-  { code:'FR', flag:'🇫🇷', name:'France' },
-  { code:'CA', flag:'🇨🇦', name:'Canada' },
-  { code:'AU', flag:'🇦🇺', name:'Australia' },
+  {code:'IN',flag:'🇮🇳',name:'India'},{code:'PK',flag:'🇵🇰',name:'Pakistan'},
+  {code:'BD',flag:'🇧🇩',name:'Bangladesh'},{code:'NP',flag:'🇳🇵',name:'Nepal'},
+  {code:'LK',flag:'🇱🇰',name:'Sri Lanka'},{code:'CN',flag:'🇨🇳',name:'China'},
+  {code:'PH',flag:'🇵🇭',name:'Philippines'},{code:'MX',flag:'🇲🇽',name:'Mexico'},
+  {code:'BR',flag:'🇧🇷',name:'Brazil'},{code:'NG',flag:'🇳🇬',name:'Nigeria'},
+  {code:'GH',flag:'🇬🇭',name:'Ghana'},{code:'ET',flag:'🇪🇹',name:'Ethiopia'},
+  {code:'EG',flag:'🇪🇬',name:'Egypt'},{code:'CO',flag:'🇨🇴',name:'Colombia'},
+  {code:'VN',flag:'🇻🇳',name:'Vietnam'},{code:'ID',flag:'🇮🇩',name:'Indonesia'},
+  {code:'TR',flag:'🇹🇷',name:'Turkey'},{code:'KR',flag:'🇰🇷',name:'South Korea'},
+  {code:'JP',flag:'🇯🇵',name:'Japan'},{code:'GB',flag:'🇬🇧',name:'United Kingdom'},
+  {code:'DE',flag:'🇩🇪',name:'Germany'},{code:'FR',flag:'🇫🇷',name:'France'},
+  {code:'CA',flag:'🇨🇦',name:'Canada'},{code:'AU',flag:'🇦🇺',name:'Australia'},
 ];
 
-const VISA_TYPES = [
-  { group:'Visitor & Tourism',  items:[
-    { code:'B1/B2', label:'B1/B2 — Visitor (Business / Tourism)' },
-    { code:'B1',    label:'B1 — Business Visitor' },
-    { code:'B2',    label:'B2 — Tourist / Pleasure' },
+const VISA_GROUPS = [
+  { group:'Visitor & Tourism', items:[
+    {code:'B1/B2',label:'B1/B2 — Visitor (Business / Tourism)'},
+    {code:'B1',   label:'B1 — Business Visitor'},
+    {code:'B2',   label:'B2 — Tourist / Pleasure'},
   ]},
   { group:'Student & Exchange', items:[
-    { code:'F-1',   label:'F-1 — Academic Student' },
-    { code:'F-2',   label:'F-2 — Spouse / Child of F-1' },
-    { code:'M-1',   label:'M-1 — Vocational Student' },
-    { code:'J-1',   label:'J-1 — Exchange Visitor' },
-    { code:'J-2',   label:'J-2 — Spouse / Child of J-1' },
+    {code:'F-1',label:'F-1 — Academic Student'},
+    {code:'F-2',label:'F-2 — Spouse / Child of F-1'},
+    {code:'M-1',label:'M-1 — Vocational Student'},
+    {code:'J-1',label:'J-1 — Exchange Visitor'},
+    {code:'J-2',label:'J-2 — Spouse / Child of J-1'},
   ]},
-  { group:'Work & Employment',  items:[
-    { code:'H-1B',  label:'H-1B — Specialty Occupation (Cap)' },
-    { code:'H-1B1', label:'H-1B1 — Chile / Singapore Free Trade' },
-    { code:'H-2A',  label:'H-2A — Temporary Agricultural Worker' },
-    { code:'H-2B',  label:'H-2B — Temporary Non-Agricultural Worker' },
-    { code:'H-4',   label:'H-4 — Dependent of H-1B Holder' },
-    { code:'L-1A',  label:'L-1A — Intracompany Manager / Executive' },
-    { code:'L-1B',  label:'L-1B — Intracompany Specialized Knowledge' },
-    { code:'L-2',   label:'L-2 — Dependent of L-1 Holder' },
-    { code:'O-1',   label:'O-1 — Extraordinary Ability / Achievement' },
-    { code:'O-2',   label:'O-2 — Assistant to O-1' },
-    { code:'P-1',   label:'P-1 — Athlete / Entertainment Group' },
-    { code:'TN',    label:'TN — Canadian/Mexican Trade Agreement' },
-    { code:'E-1',   label:'E-1 — Treaty Trader' },
-    { code:'E-2',   label:'E-2 — Treaty Investor' },
-    { code:'E-3',   label:'E-3 — Australian Specialty Occupation' },
+  { group:'Work & Employment', items:[
+    {code:'H-1B', label:'H-1B — Specialty Occupation (Cap)'},
+    {code:'H-1B1',label:'H-1B1 — Chile / Singapore Free Trade'},
+    {code:'H-2A', label:'H-2A — Temporary Agricultural Worker'},
+    {code:'H-2B', label:'H-2B — Temporary Non-Agricultural Worker'},
+    {code:'H-4',  label:'H-4 — Dependent of H-1B Holder'},
+    {code:'L-1A', label:'L-1A — Intracompany Manager / Executive'},
+    {code:'L-1B', label:'L-1B — Intracompany Specialized Knowledge'},
+    {code:'L-2',  label:'L-2 — Dependent of L-1 Holder'},
+    {code:'O-1',  label:'O-1 — Extraordinary Ability / Achievement'},
+    {code:'O-2',  label:'O-2 — Assistant to O-1'},
+    {code:'P-1',  label:'P-1 — Athlete / Entertainment Group'},
+    {code:'TN',   label:'TN — Canadian/Mexican Trade Agreement'},
+    {code:'E-1',  label:'E-1 — Treaty Trader'},
+    {code:'E-2',  label:'E-2 — Treaty Investor'},
+    {code:'E-3',  label:'E-3 — Australian Specialty Occupation'},
   ]},
   { group:'Other Non-Immigrant', items:[
-    { code:'C-1',   label:'C-1 — Transit Visa' },
-    { code:'C-1/D', label:'C-1/D — Crew Member Transit' },
-    { code:'K-1',   label:'K-1 — Fiancé(e) of US Citizen' },
-    { code:'K-3',   label:'K-3 — Spouse of US Citizen (abroad)' },
-    { code:'G-1-4', label:'G-1 to G-4 — International Organization' },
+    {code:'C-1',   label:'C-1 — Transit Visa'},
+    {code:'C-1/D', label:'C-1/D — Crew Member Transit'},
+    {code:'K-1',   label:'K-1 — Fiancé(e) of US Citizen'},
+    {code:'K-3',   label:'K-3 — Spouse of US Citizen (abroad)'},
+    {code:'G-1-4', label:'G-1 to G-4 — International Organization'},
   ]},
 ];
 
 const APPT_TYPES = [
-  {
-    code:'regular',
-    label:'Regular',
-    desc:'Standard interview + biometrics (VAC + Consulate)',
-    dot:'bg-green-400',
-    badge:'Most common',
-  },
-  {
-    code:'expedited',
-    label:'Expedited',
-    desc:'Urgent travel — faster scheduling, limited slots',
-    dot:'bg-orange-400',
-    badge:'Limited slots',
-  },
-  {
-    code:'waiver',
-    label:'Interview Waiver (Drop-Box)',
-    desc:'Skip interview — eligible repeat B1/B2 applicants only',
-    dot:'bg-blue-400',
-    badge:'Eligibility required',
-  },
-  {
-    code:'renewal',
-    label:'Renewal — Same Visa Class',
-    desc:'Renewal of same visa category within validity gap',
-    dot:'bg-purple-400',
-    badge:'',
-  },
+  {code:'regular',   label:'Regular',                    desc:'Standard interview + biometrics (VAC + Consulate)',               dot:'bg-green-400',  badge:'Most common'},
+  {code:'expedited', label:'Expedited',                  desc:'Urgent travel — faster scheduling, limited slots',                dot:'bg-orange-400', badge:'Limited slots'},
+  {code:'waiver',    label:'Interview Waiver (Drop-Box)',desc:'Skip interview — eligible repeat B1/B2 applicants only',          dot:'bg-blue-400',   badge:'Eligibility required'},
+  {code:'renewal',   label:'Renewal — Same Visa Class',  desc:'Renewal of same visa category within validity gap',              dot:'bg-purple-400', badge:''},
 ];
 
-const VAC_LOCATIONS = [
-  { city:'New Delhi',  full:'New Delhi VAC' },
-  { city:'Mumbai',     full:'Mumbai VAC' },
-  { city:'Chennai',    full:'Chennai VAC' },
-  { city:'Hyderabad',  full:'Hyderabad VAC' },
-  { city:'Kolkata',    full:'Kolkata VAC' },
+const VAC_LOCS = [
+  {city:'New Delhi', full:'New Delhi VAC'},
+  {city:'Mumbai',    full:'Mumbai VAC'},
+  {city:'Chennai',   full:'Chennai VAC'},
+  {city:'Hyderabad', full:'Hyderabad VAC'},
+  {city:'Kolkata',   full:'Kolkata VAC'},
 ];
 
-const CONSULAR_LOCS = [
-  { label:'New Delhi — U.S. Embassy',           note:'Serves: Delhi, Punjab, UP, Rajasthan & more' },
-  { label:'Mumbai — U.S. Consulate General',    note:'Serves: Maharashtra, Goa, Gujarat & more' },
-  { label:'Chennai — U.S. Consulate General',   note:'Serves: Tamil Nadu, Kerala, Karnataka & more' },
-  { label:'Hyderabad — U.S. Consulate General', note:'Serves: Telangana, Andhra Pradesh' },
-  { label:'Kolkata — U.S. Consulate General',   note:'Serves: West Bengal, Odisha, North-East India' },
+const CON_LOCS = [
+  {label:'New Delhi — U.S. Embassy',           note:'Serves: Delhi, Punjab, UP, Rajasthan & more'},
+  {label:'Mumbai — U.S. Consulate General',    note:'Serves: Maharashtra, Goa, Gujarat & more'},
+  {label:'Chennai — U.S. Consulate General',   note:'Serves: Tamil Nadu, Kerala, Karnataka & more'},
+  {label:'Hyderabad — U.S. Consulate General', note:'Serves: Telangana, Andhra Pradesh'},
+  {label:'Kolkata — U.S. Consulate General',   note:'Serves: West Bengal, Odisha, North-East India'},
 ];
 
-/* ── SHARED STATE ───────────────────────────────────────────── */
-/* ──────────────────────────────────────────────────────────
-   SHARED STATE
-────────────────────────────────────────────────────────── */
+// Price by number of consular locations selected (0 = no biometrics selected)
+const PRICE_BY_CON = {0:0, 1:155, 2:130, 3:105, 4:85, 5:75};
 
-let state = {
-  country: COUNTRIES[0],
-  visaType: VISA_TYPES[1].items[0],
-  apptType: APPT_TYPES[0],
+const CAL_QUICKS = [
+  {label:'1 week',days:7},{label:'2 weeks',days:14},{label:'1 month',days:30},
+  {label:'3 months',days:90},{label:'6 months',days:180},{label:'1 year',days:365},
+];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const WDAYS  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+/* ─────────────────────────────────────────
+   STATE
+───────────────────────────────────────── */
+const S = {
+  country:    COUNTRIES[0],
+  visaType:   VISA_GROUPS[1].items[0],
+  apptType:   APPT_TYPES[0],
   applicants: 1,
-
-  biometrics: VAC_LOCATIONS.map(location => location.full),
-
-  // Multi-select consular locations
-  consular: [],
-
-  calStart: new Date(2026, 4, 21),
-  calEnd: new Date(2026, 8, 10),
+  bio:        VAC_LOCS.map(v => v.full),  // all 5 selected by default
+  con:        [],                          // multi-select, none by default
+  calStart:   new Date(2026,4,21),
+  calEnd:     new Date(2026,8,10),
 };
 
-
-/* ──────────────────────────────────────────────────────────
-   PRICING CONFIG
-────────────────────────────────────────────────────────── */
-
-const PRICING_BY_CONSULAR_COUNT = Object.freeze({
-  1: 155,
-  2: 130,
-  3: 105,
-  4: 85,
-  5: 75,
-});
-
-
-/* ──────────────────────────────────────────────────────────
-   PRICING HELPERS
-────────────────────────────────────────────────────────── */
-
-function getSelectedConsularCount() {
-  return state.consular.length;
-}
-
-function getSelectedWindowDays() {
-  if (!state.calStart || !state.calEnd) {
-    return 0;
-  }
-
-  return Math.round(
-    Math.abs(state.calEnd - state.calStart) / 86400000
-  );
-}
-
-function calculateDynamicPrice() {
-
-  // No biometrics selected
-  if (state.biometrics.length === 0) {
-    return 0;
-  }
-
-  const consularCount = getSelectedConsularCount();
-
-  return PRICING_BY_CONSULAR_COUNT[consularCount] ?? 0;
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   FEE CARD UI UPDATE
-────────────────────────────────────────────────────────── */
-
-function updateFeeCard() {
-
-  const price = calculateDynamicPrice();
-
-  const days = getSelectedWindowDays();
-
-  document.getElementById('fee-price').textContent =
-    price;
-
-  document.getElementById('fee-appt-type').textContent =
-    state.apptType.label;
-
-  document.getElementById('fee-visa-type').textContent =
-    state.visaType.code;
-
-  document.getElementById('fee-applicants').textContent =
-    state.applicants;
-
-  document.getElementById('fee-window').textContent =
-    days;
-
-}
-
-/* ── GENERIC DROPDOWN HELPERS ───────────────────────────────── */
-const openMenus = new Set();
-
-function openDD(menuEl, chevEl, btnEl) {
-  menuEl.classList.remove('hidden','closing');
-  if (chevEl) chevEl.classList.add('open');
-  btnEl.setAttribute('aria-expanded','true');
-  openMenus.add(menuEl.id);
-}
-function closeDD(menuEl, chevEl, btnEl) {
-  if (menuEl.classList.contains('hidden')) return;
-  if (chevEl) chevEl.classList.remove('open');
-  btnEl.setAttribute('aria-expanded','false');
-  openMenus.delete(menuEl.id);
-  menuEl.classList.add('closing');
-  menuEl.addEventListener('animationend', () => {
-    menuEl.classList.add('hidden');
-    menuEl.classList.remove('closing');
-  }, { once:true });
-}
-function toggleDD(menuEl, chevEl, btnEl, renderFn) {
-  if (!menuEl.classList.contains('hidden')) { closeDD(menuEl, chevEl, btnEl); return; }
-  closeAllExcept(menuEl.id);
-  if (renderFn) renderFn();
-  openDD(menuEl, chevEl, btnEl);
-}
-function closeAllExcept(exceptId) {
-  ['country-menu','visatype-menu','appttype-menu','biometrics-menu','consular-menu'].forEach(id => {
-    if (id === exceptId) return;
-    const m = document.getElementById(id);
-    const b = document.getElementById(id.replace('-menu','-btn'));
-    const c = document.getElementById(id.replace('-menu','-chev'));
-    if (m && b) closeDD(m, c, b);
-  });
-}
-
-const checkSVG = (v) => `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+/* ─────────────────────────────────────────
+   SVG HELPERS
+───────────────────────────────────────── */
+const checkSVG = ok => `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
   fill="none" stroke="#f15a22" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-  style="flex-shrink:0;opacity:${v?1:0};transition:opacity .1s"><path d="M20 6 9 17l-5-5"/></svg>`;
+  style="flex-shrink:0;opacity:${ok?1:0};transition:opacity .1s"><path d="M20 6 9 17l-5-5"/></svg>`;
+
 const xSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
   fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
   <path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 
-/* ── COUNTRY DROPDOWN ───────────────────────────────────────── */
-function renderCountryList(filter='') {
-  const list = document.getElementById('country-list');
-  list.innerHTML = '';
-  const q = filter.toLowerCase();
-  const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
-  filtered.forEach(c => {
-    const li = document.createElement('li');
-    li.setAttribute('role','option');
-    li.setAttribute('aria-selected', state.country.code === c.code);
-    li.className = `ddopt flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm text-text-300${state.country.code===c.code?' sel':''}`;
-    li.innerHTML = `<span class="text-base">${c.flag}</span><span class="flex-1">${c.name}</span>${checkSVG(state.country.code===c.code)}`;
-    li.addEventListener('click', () => {
-      state.country = c;
-      document.getElementById('country-flag').textContent  = c.flag;
-      document.getElementById('country-label').textContent = c.name;
-      closeDD(document.getElementById('country-menu'), document.getElementById('country-chev'), document.getElementById('country-btn'));
-    });
-    list.appendChild(li);
-  });
-  if (!filtered.length) {
-    const li = document.createElement('li');
-    li.className = 'px-4 py-3 text-sm text-text-200 italic';
-    li.textContent = 'No countries found';
-    list.appendChild(li);
+/* ─────────────────────────────────────────
+   FEE CARD
+───────────────────────────────────────── */
+function updateFee() {
+  const days  = (S.calStart && S.calEnd) ? Math.round(Math.abs(S.calEnd - S.calStart) / 86400000) : 0;
+  const price = S.bio.length ? (PRICE_BY_CON[S.con.length] ?? 0) : 0;
+
+  // Window discount for fee card display only (informational)
+  const disc = days >= 30 ? 40 : days >= 14 ? 20 : days >= 7 ? 10 : 0;
+
+  $('fc-price').textContent     = price;
+  $('fc-atype').textContent     = S.apptType.label;
+  $('fc-vtype').textContent     = S.visaType.code;
+  $('fc-applicants').textContent= S.applicants;
+  $('fc-window').textContent    = days;
+
+  const discEl = $('fc-disc');
+  if (disc > 0 && price > 0) {
+    discEl.classList.remove('hidden');
+    $('fc-disc-txt').textContent = `${disc}% window discount applied (${days}-day range)`;
+  } else {
+    discEl.classList.add('hidden');
   }
 }
 
-document.getElementById('country-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const m=document.getElementById('country-menu'),c=document.getElementById('country-chev'),b=document.getElementById('country-btn');
-  toggleDD(m,c,b,()=>{ renderCountryList(); document.getElementById('country-search').value=''; });
-  if (!m.classList.contains('hidden')) setTimeout(()=>document.getElementById('country-search').focus(),50);
-});
-document.getElementById('country-search').addEventListener('input', e => renderCountryList(e.target.value));
-document.getElementById('country-search').addEventListener('click', e => e.stopPropagation());
+/* ─────────────────────────────────────────
+   DROPDOWN ENGINE
+   Reusable: open, close, toggle, closeAll
+───────────────────────────────────────── */
+const $ = id => document.getElementById(id);
 
-/* ── VISA TYPE DROPDOWN ─────────────────────────────────────── */
-function renderVisaTypeList(filter='') {
-  const list = document.getElementById('visatype-list');
+function openDD(menuId, chevId, btnId) {
+  const m = $(menuId), c = $(chevId), b = $(btnId);
+  m.classList.remove('hidden','out');
+  c?.classList.add('open');
+  b.setAttribute('aria-expanded','true');
+}
+
+function closeDD(menuId, chevId, btnId) {
+  const m = $(menuId);
+  if (m.classList.contains('hidden')) return;
+  $(chevId)?.classList.remove('open');
+  $(btnId).setAttribute('aria-expanded','false');
+  m.classList.add('out');
+  m.addEventListener('animationend', () => { m.classList.add('hidden'); m.classList.remove('out'); }, {once:true});
+}
+
+const DROPDOWNS = ['country','vtype','atype','bio','con'];
+
+function closeAllBut(skip) {
+  DROPDOWNS.forEach(k => { if (k !== skip) closeDD(`menu-${k}`, `chv-${k}`, `btn-${k}`); });
+}
+
+function toggleDD(key, renderFn) {
+  const m = $(`menu-${key}`);
+  if (!m.classList.contains('hidden')) { closeDD(`menu-${key}`, `chv-${key}`, `btn-${key}`); return; }
+  closeAllBut(key);
+  renderFn();
+  openDD(`menu-${key}`, `chv-${key}`, `btn-${key}`);
+}
+
+/* ─────────────────────────────────────────
+   CHIP FACTORY
+   Renders removable tags into a container
+───────────────────────────────────────── */
+function renderChips(containerId, phId, items, onRemove) {
+  const chips = $(containerId), ph = $(phId);
+  chips.innerHTML = '';
+  if (!items.length) { ph.classList.remove('hidden'); return; }
+  ph.classList.add('hidden');
+  items.forEach(val => {
+    const span = document.createElement('span');
+    span.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 select-none';
+    const label = val.split('—')[0].trim(); // shorten e.g. "New Delhi — U.S. Embassy" → "New Delhi"
+    span.innerHTML = `${label}<span role="button" tabindex="0" data-v="${val}"
+      class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center">${xSVG}</span>`;
+    chips.appendChild(span);
+  });
+  chips.querySelectorAll('.chip-x').forEach(x => {
+    const act = () => onRemove(x.dataset.v);
+    x.addEventListener('click', e => { e.stopPropagation(); act(); });
+    x.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.stopPropagation(); act(); } });
+  });
+}
+
+/* ─────────────────────────────────────────
+   COUNTRY DROPDOWN
+───────────────────────────────────────── */
+function renderCountryList(q = '') {
+  const list = $('list-country');
   list.innerHTML = '';
-  const q = filter.toLowerCase();
-  VISA_TYPES.forEach(group => {
-    const items = group.items.filter(v => v.label.toLowerCase().includes(q) || v.code.toLowerCase().includes(q));
+  const lq = q.toLowerCase();
+  const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(lq) || c.code.toLowerCase().includes(lq));
+  if (!filtered.length) { list.innerHTML = `<li class="px-4 py-3 text-sm text-t200 italic">No countries found</li>`; return; }
+  filtered.forEach(c => {
+    const li = mkLi(`ddopt flex items-center gap-3 px-4 py-2.5 text-sm text-t300${S.country.code===c.code?' on':''}`,
+      `<span>${c.flag}</span><span class="flex-1">${c.name}</span>${checkSVG(S.country.code===c.code)}`);
+    li.onclick = () => {
+      S.country = c;
+      $('country-flag').textContent = c.flag;
+      $('country-lbl').textContent  = c.name;
+      closeDD('menu-country','chv-country','btn-country');
+    };
+    list.appendChild(li);
+  });
+}
+
+$('btn-country').addEventListener('click', e => {
+  e.stopPropagation();
+  toggleDD('country', () => { renderCountryList(); $('s-country').value = ''; });
+  if (!$('menu-country').classList.contains('hidden')) setTimeout(() => $('s-country').focus(), 50);
+});
+$('s-country').addEventListener('input',  e => renderCountryList(e.target.value));
+$('s-country').addEventListener('click',  e => e.stopPropagation());
+
+/* ─────────────────────────────────────────
+   VISA TYPE DROPDOWN  (grouped + search)
+───────────────────────────────────────── */
+function renderVtypeList(q = '') {
+  const list = $('list-vtype');
+  list.innerHTML = '';
+  const lq = q.toLowerCase();
+  VISA_GROUPS.forEach(g => {
+    const items = g.items.filter(v => v.label.toLowerCase().includes(lq) || v.code.toLowerCase().includes(lq));
     if (!items.length) return;
-    const gl = document.createElement('li');
-    gl.className = 'ddgroup';
-    gl.textContent = group.group;
+    const gl = document.createElement('li'); gl.className = 'grp'; gl.textContent = g.group;
     list.appendChild(gl);
     items.forEach(v => {
-      const li = document.createElement('li');
-      li.setAttribute('role','option');
-      li.setAttribute('aria-selected', state.visaType.code === v.code);
-      li.className = `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${state.visaType.code===v.code?' sel':''}`;
-      li.innerHTML = `<span>${v.label}</span>${checkSVG(state.visaType.code===v.code)}`;
-      li.addEventListener('click', () => {
-        state.visaType = v;
-        document.getElementById('visatype-label').textContent = v.label;
-        closeDD(document.getElementById('visatype-menu'),document.getElementById('visatype-chev'),document.getElementById('visatype-btn'));
-        updateFeeCard();
-      });
+      const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${S.visaType.code===v.code?' on':''}`,
+        `<span>${v.label}</span>${checkSVG(S.visaType.code===v.code)}`);
+      li.onclick = () => {
+        S.visaType = v;
+        $('vtype-lbl').textContent = v.label;
+        closeDD('menu-vtype','chv-vtype','btn-vtype');
+        updateFee();
+      };
       list.appendChild(li);
     });
   });
 }
 
-document.getElementById('visatype-btn').addEventListener('click', e => {
+$('btn-vtype').addEventListener('click', e => {
   e.stopPropagation();
-  const m=document.getElementById('visatype-menu'),c=document.getElementById('visatype-chev'),b=document.getElementById('visatype-btn');
-  toggleDD(m,c,b,()=>{ renderVisaTypeList(); document.getElementById('visatype-search').value=''; });
-  if (!m.classList.contains('hidden')) setTimeout(()=>document.getElementById('visatype-search').focus(),50);
+  toggleDD('vtype', () => { renderVtypeList(); $('s-vtype').value = ''; });
+  if (!$('menu-vtype').classList.contains('hidden')) setTimeout(() => $('s-vtype').focus(), 50);
 });
-document.getElementById('visatype-search').addEventListener('input', e => renderVisaTypeList(e.target.value));
-document.getElementById('visatype-search').addEventListener('click', e => e.stopPropagation());
+$('s-vtype').addEventListener('input', e => renderVtypeList(e.target.value));
+$('s-vtype').addEventListener('click', e => e.stopPropagation());
 
-/* ── APPOINTMENT TYPE DROPDOWN ──────────────────────────────── */
-function renderApptTypeList() {
-  const list = document.getElementById('appttype-list');
+/* ─────────────────────────────────────────
+   APPOINTMENT TYPE DROPDOWN  (rich rows)
+───────────────────────────────────────── */
+function renderAtypeList() {
+  const list = $('list-atype');
   list.innerHTML = '';
   APPT_TYPES.forEach(a => {
-    const isSel = state.apptType.code === a.code;
-    const li = document.createElement('li');
-    li.setAttribute('role','option');
-    li.setAttribute('aria-selected', isSel);
-    li.className = `ddopt px-4 py-2.5 cursor-pointer${isSel?' sel':''}`;
-    li.innerHTML = `
+    const li = mkLi(`opt px-4 py-2.5${S.apptType.code===a.code?' on':''}`, `
       <div class="flex items-start gap-3">
         <span class="w-2 h-2 rounded-full ${a.dot} flex-shrink-0 mt-1.5"></span>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-text-300">${a.label}</span>
-            ${a.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">${a.badge}</span>` : ''}
+            <span class="text-sm font-medium text-t300">${a.label}</span>
+            ${a.badge?`<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">${a.badge}</span>`:''}
           </div>
-          <p class="text-xs text-text-200 mt-0.5 leading-relaxed">${a.desc}</p>
+          <p class="text-xs text-t200 mt-0.5 leading-relaxed">${a.desc}</p>
         </div>
-        ${checkSVG(isSel)}
-      </div>`;
-    li.addEventListener('click', () => {
-      state.apptType = a;
-      document.getElementById('appttype-label').textContent = a.label;
-      document.getElementById('appttype-dot').className = `w-2 h-2 rounded-full ${a.dot} flex-shrink-0`;
-      closeDD(document.getElementById('appttype-menu'),document.getElementById('appttype-chev'),document.getElementById('appttype-btn'));
-      updateFeeCard();
-    });
+        ${checkSVG(S.apptType.code===a.code)}
+      </div>`);
+    li.onclick = () => {
+      S.apptType = a;
+      $('atype-lbl').textContent = a.label;
+      $('atype-dot').className = `w-2 h-2 rounded-full ${a.dot} flex-shrink-0`;
+      closeDD('menu-atype','chv-atype','btn-atype');
+      updateFee();
+    };
     list.appendChild(li);
   });
 }
 
-document.getElementById('appttype-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const m=document.getElementById('appttype-menu'),c=document.getElementById('appttype-chev'),b=document.getElementById('appttype-btn');
-  toggleDD(m,c,b,renderApptTypeList);
-});
+$('btn-atype').addEventListener('click', e => { e.stopPropagation(); toggleDD('atype', renderAtypeList); });
 
-/* ── BIOMETRICS MULTI-SELECT ────────────────────────────────── */
-function renderBioChips() {
-  const chips = document.getElementById('biometrics-chips');
-  const ph    = document.getElementById('biometrics-ph');
-  chips.innerHTML = '';
-  if (!state.biometrics.length) { ph.classList.remove('hidden'); return; }
-  ph.classList.add('hidden');
-  state.biometrics.forEach(loc => {
-    const span = document.createElement('span');
-    span.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 select-none';
-    span.innerHTML = `${loc}<span role="button" tabindex="0" data-loc="${loc}"
-      class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center"
-      aria-label="Remove ${loc}">${xSVG}</span>`;
-    chips.appendChild(span);
-  });
-  chips.querySelectorAll('.chip-x').forEach(x => {
-    x.addEventListener('click', e => { e.stopPropagation(); removeBio(x.dataset.loc); });
-    x.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.stopPropagation(); removeBio(x.dataset.loc); } });
-  });
-}
+/* ─────────────────────────────────────────
+   BIOMETRICS MULTI-SELECT
+───────────────────────────────────────── */
+function renderBioChips()   { renderChips('chips-bio','ph-bio', S.bio,  loc => { S.bio = S.bio.filter(x=>x!==loc);  refreshBio(); }); }
 function renderBioOptions() {
-  const list = document.getElementById('biometrics-list');
-  list.innerHTML = '';
-  VAC_LOCATIONS.forEach(v => {
-    const sel = state.biometrics.includes(v.full);
-    const li  = document.createElement('li');
-    li.setAttribute('role','option'); li.setAttribute('aria-selected', sel);
-    li.className = `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${sel?' sel':''}`;
-    li.innerHTML = `<div><span>${v.full}</span><br><span class="text-xs text-text-200">${v.city} Visa Application Centre</span></div>${checkSVG(sel)}`;
-    li.addEventListener('click', () => { sel ? removeBio(v.full) : addBio(v.full); });
+  const list = $('list-bio'); list.innerHTML = '';
+  VAC_LOCS.forEach(v => {
+    const on = S.bio.includes(v.full);
+    const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${on?' on':''}`,
+      `<div><span>${v.full}</span><br><span class="text-xs text-t200">${v.city} Visa Application Centre</span></div>${checkSVG(on)}`);
+    li.onclick = () => {
+      S.bio = on ? S.bio.filter(x=>x!==v.full) : [...S.bio, v.full];
+      refreshBio();
+    };
     list.appendChild(li);
   });
 }
-function addBio(loc) { if (!state.biometrics.includes(loc)) state.biometrics.push(loc); renderBioChips(); renderBioOptions(); updateFeeCard(); }
-function removeBio(loc) { state.biometrics = state.biometrics.filter(l=>l!==loc); renderBioChips(); renderBioOptions(); updateFeeCard(); }
+function refreshBio() { renderBioChips(); renderBioOptions(); updateFee(); }
 
-document.getElementById('biometrics-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const m=document.getElementById('biometrics-menu'),c=document.getElementById('biometrics-chev'),b=document.getElementById('biometrics-btn');
-  toggleDD(m,c,b,renderBioOptions);
-});
+$('btn-bio').addEventListener('click', e => { e.stopPropagation(); toggleDD('bio', renderBioOptions); });
 
-/* ── CONSULAR SINGLE-SELECT ─────────────────────────────────── */
-function renderConLabel() {
-
-  const chips =
-    document.getElementById('consular-chips');
-
-  const labelEl =
-    document.getElementById('consular-label');
-
-  chips.innerHTML = '';
-
-  if (!state.consular.length) {
-
-    labelEl.textContent =
-      'Select Consular Locations';
-
-    labelEl.style.color = '#b2b5c3';
-    labelEl.classList.remove('hidden');
-
-    return;
-  }
-
-  labelEl.classList.add('hidden');
-
-  state.consular.forEach(locationLabel => {
-    const chipLabel =
-      locationLabel.split('—')[0].trim();
-
-    const span =
-      document.createElement('span');
-
-    span.className =
-      'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 select-none';
-
-    span.innerHTML = `${chipLabel}<span role="button" tabindex="0" data-loc="${locationLabel}"
-      class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center"
-      aria-label="Remove ${chipLabel}">${xSVG}</span>`;
-
-    chips.appendChild(span);
-  });
-
-  chips.querySelectorAll('.chip-x').forEach(x => {
-    x.addEventListener('click', e => {
-      e.stopPropagation();
-      toggleConsularSelection(x.dataset.loc);
-    });
-    x.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.stopPropagation();
-        toggleConsularSelection(x.dataset.loc);
-      }
-    });
-  });
-}
-
-
-function toggleConsularSelection(locationLabel) {
-
-  const alreadySelected =
-    state.consular.includes(locationLabel);
-
-  state.consular = alreadySelected
-    ? state.consular.filter(
-        item => item !== locationLabel
-      )
-    : [...state.consular, locationLabel];
-
-  renderConLabel();
-  renderConOptions();
-  updateFeeCard();
-}
-
-
+/* ─────────────────────────────────────────
+   CONSULAR MULTI-SELECT
+───────────────────────────────────────── */
+function renderConChips()   { renderChips('chips-con','ph-con', S.con, lbl => { S.con = S.con.filter(x=>x!==lbl); refreshCon(); }); }
 function renderConOptions() {
-
-  const list =
-    document.getElementById('consular-list');
-
-  list.innerHTML = '';
-
-  CONSULAR_LOCS.forEach(location => {
-
-    const isSelected =
-      state.consular.includes(location.label);
-
-    const li =
-      document.createElement('li');
-
-    li.setAttribute('role', 'option');
-
-    li.setAttribute(
-      'aria-selected',
-      isSelected
-    );
-
-    li.className =
-      `ddopt flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm text-text-300${
-        isSelected ? ' sel' : ''
-      }`;
-
-    li.innerHTML = `
-      <div>
-        <span class="font-medium">
-          ${location.label}
-        </span>
-        <br>
-        <span class="text-xs text-text-200">
-          ${location.note}
-        </span>
-      </div>
-
-      ${checkSVG(isSelected)}
-    `;
-
-    li.addEventListener('click', () => {
-      toggleConsularSelection(location.label);
-    });
-
+  const list = $('list-con'); list.innerHTML = '';
+  CON_LOCS.forEach(c => {
+    const on = S.con.includes(c.label);
+    const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${on?' on':''}`,
+      `<div><span class="font-medium">${c.label}</span><br><span class="text-xs text-t200">${c.note}</span></div>${checkSVG(on)}`);
+    li.onclick = () => {
+      S.con = on ? S.con.filter(x=>x!==c.label) : [...S.con, c.label];
+      refreshCon();
+    };
     list.appendChild(li);
   });
 }
+function refreshCon() { renderConChips(); renderConOptions(); updateFee(); }
 
+$('btn-con').addEventListener('click', e => { e.stopPropagation(); toggleDD('con', renderConOptions); });
 
-document
-  .getElementById('consular-btn')
-  .addEventListener('click', e => {
+/* ─────────────────────────────────────────
+   APPLICANTS
+───────────────────────────────────────── */
+$('inp-applicants').addEventListener('input', e => { S.applicants = Math.max(1, parseInt(e.target.value)||1); updateFee(); });
 
-    e.stopPropagation();
-
-    const menu =
-      document.getElementById('consular-menu');
-
-    const chev =
-      document.getElementById('consular-chev');
-
-    const btn =
-      document.getElementById('consular-btn');
-
-    toggleDD(
-      menu,
-      chev,
-      btn,
-      renderConOptions
-    );
-  });
-
-/* ── APPLICANTS INPUT ───────────────────────────────────────── */
-document.getElementById('applicants-input').addEventListener('input', e => {
-  state.applicants = Math.max(1, parseInt(e.target.value)||1);
-  updateFeeCard();
-});
-
-/* ── CALENDAR RANGE PICKER ──────────────────────────────────── */
+/* ─────────────────────────────────────────
+   CALENDAR RANGE PICKER
+───────────────────────────────────────── */
 (() => {
-  const todayD  = new Date(2026,4,19);
-  let startD    = new Date(2026,4,21);
-  let endD      = new Date(2026,8,10);
-  let hoverD    = null;
-  let selecting = false;
-  let viewYear  = 2026, viewMonth = 4;
-  let panelOpen = false;
-  let activeQ   = null;
+  const TODAY    = new Date(2026,4,19);
+  let start      = new Date(2026,4,21);
+  let end        = new Date(2026,8,10);
+  let hover      = null;
+  let picking    = false;   // true after first click, awaiting end date
+  let vy = 2026, vm = 4;
+  let open       = false;
+  let activeQ    = null;
 
-  const QUICKS = [
-    { label:'1 week',    days:7   },
-    { label:'2 weeks',   days:14  },
-    { label:'1 month',   days:30  },
-    { label:'3 months',  days:90  },
-    { label:'6 months',  days:180 },
-    { label:'1 year',    days:365 },
-  ];
-  const MNAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const WDAYS  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const fmtD   = d => `${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()}`;
+  const pad    = n => String(n).padStart(2,'0');
+  const dKey   = d => d ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : null;
+  const diffD  = (a,b) => Math.round(Math.abs(b-a)/86400000);
+  const addD   = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
 
-  const eTrig  = document.getElementById('calTrigger');
-  const ePanel = document.getElementById('calPanel');
-  const eTText = document.getElementById('calTriggerText');
-  const eTDur  = document.getElementById('calTriggerDur');
-  const eTChev = document.getElementById('calTriggerChev');
-  const eQBar  = document.getElementById('calQuickBar');
-  const eMons  = document.getElementById('calMonths');
-  const eFooter= document.getElementById('calFooterInfo');
-  const eHint  = document.getElementById('calHintText');
-  const eClear = document.getElementById('calBtnClear');
-  const eApply = document.getElementById('calBtnApply');
-
-  function fmt(d) { return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`; }
-  function dKey(d) { return d?`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`:null; }
-  function daysDiff(a,b) { return Math.round(Math.abs(b-a)/86400000); }
-  function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
-
-  function pushToState() {
-    state.calStart = startD;
-    state.calEnd   = endD;
-    updateFeeCard();
-  }
+  function syncState() { S.calStart = start; S.calEnd = end; updateFee(); }
 
   function updateTrigger() {
-    if (startD && endD) {
-      const d = daysDiff(startD, endD);
-      eTText.textContent = `${fmt(startD)} → ${fmt(endD)}`;
-      eTText.classList.remove('ph');
-      eTDur.textContent = `${d} day${d!==1?'s':''}`;
-      eTDur.style.display = '';
-      eHint.textContent =
+    const txt = $('cal-range-txt'), dur = $('cal-dur-txt'), hint = $('cal-hint-txt');
+    if (start && end) {
+      const d = diffD(start, end);
+      txt.textContent = `${fmtD(start)} → ${fmtD(end)}`;
+      txt.classList.remove('ph');
+      dur.textContent = `${d} day${d!==1?'s':''}`;
+      dur.style.display = '';
+      hint.textContent =
         d<=7  ? '⚡ Very tight window — fewer available slots' :
         d<=14 ? '⚡ Short window — limited options' :
         d<=30 ? '✓ Moderate window — decent slot variety' :
-        d<=90 ? '✓ Good range — more slots & lower service cost' :
+        d<=90 ? '✓ Good range — more slots & lower cost' :
                 '✓ Wide window — best availability & lowest cost';
-    } else if (startD) {
-      eTText.textContent = `${fmt(startD)} → …`;
-      eTText.classList.remove('ph');
-      eTDur.style.display = 'none';
-      eHint.textContent = 'Now pick an end date';
+    } else if (start) {
+      txt.textContent = `${fmtD(start)} → …`; txt.classList.remove('ph');
+      dur.style.display = 'none';
+      hint.textContent = 'Now pick an end date';
     } else {
-      eTText.textContent = 'Select date range';
-      eTText.classList.add('ph');
-      eTDur.style.display = 'none';
-      eHint.textContent = 'Wider window = more slot options, lower cost';
+      txt.textContent = 'Select date range'; txt.classList.add('ph');
+      dur.style.display = 'none';
+      hint.textContent = 'Wider window = more slot options, lower cost';
     }
   }
+
   function updateFooter() {
-    if (!startD) { eFooter.innerHTML = 'Pick a <strong>start</strong> date'; return; }
-    if (!endD)   { eFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; pick end date`; return; }
-    const d = daysDiff(startD,endD);
-    eFooter.innerHTML = `<strong>${fmt(startD)}</strong> &rarr; <strong>${fmt(endD)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}`;
+    const el = $('cal-foot-info');
+    if (!start) { el.innerHTML = 'Pick a <strong>start</strong> date'; return; }
+    if (!end)   { el.innerHTML = `<strong>${fmtD(start)}</strong> &rarr; pick end date`; return; }
+    const d = diffD(start,end), disc = d>=30?40:d>=14?20:d>=7?10:0;
+    el.innerHTML = `<strong>${fmtD(start)}</strong> &rarr; <strong>${fmtD(end)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}` +
+      (disc ? ` &nbsp;<span style="color:#16a34a;font-weight:600">−${disc}% off</span>` : '');
   }
 
-  function renderQuickBar() {
-    eQBar.innerHTML = '';
-    QUICKS.forEach(q => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cal-quick' + (activeQ===q.days?' active':'');
-      btn.textContent = q.label;
-      btn.onclick = () => {
-        startD = addDays(todayD,1);
-        endD   = addDays(startD, q.days-1);
-        selecting=false; hoverD=null; activeQ=q.days;
-        viewMonth = startD.getMonth(); viewYear = startD.getFullYear();
-        renderAll(); updateTrigger(); pushToState();
+  function buildQuickBar() {
+    const bar = $('cal-qbar'); bar.innerHTML = '';
+    CAL_QUICKS.forEach(q => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = `cq${activeQ===q.days?' on':''}`; b.textContent = q.label;
+      b.onclick = () => {
+        start = addD(TODAY,1); end = addD(start,q.days-1);
+        picking=false; hover=null; activeQ=q.days;
+        vm=start.getMonth(); vy=start.getFullYear();
+        renderAll(); updateTrigger(); syncState();
       };
-      eQBar.appendChild(btn);
+      bar.appendChild(b);
     });
   }
 
-  function renderMonths() {
-    eMons.innerHTML = '';
+  function buildMonths() {
+    const grid = $('cal-grid'); grid.innerHTML = '';
     for (let i=0; i<2; i++) {
-      let m=viewMonth+i, y=viewYear;
-      if (m>11){m-=12;y++;}
-      eMons.appendChild(buildMonth(y,m,i));
+      let m=vm+i, y=vy; if(m>11){m-=12;y++;}
+      grid.appendChild(buildMonth(y,m,i));
     }
   }
 
-  function buildMonth(year, month, idx) {
+  function buildMonth(yr, mo, idx) {
     const wrap = document.createElement('div');
-    /* header */
-    const hdr = document.createElement('div'); hdr.className='cal-month-header';
-    const prev= document.createElement('button'); prev.type='button';
-    prev.className='cal-month-nav'+(idx>0?' hidden':'');
-    prev.innerHTML='&#8249;';
-    prev.onclick=()=>{ viewMonth--; if(viewMonth<0){viewMonth=11;viewYear--;} renderAll(); };
-    const title=document.createElement('div'); title.className='cal-month-title';
-    title.textContent=`${MNAMES[month]} ${year}`;
-    const next=document.createElement('button'); next.type='button';
-    next.className='cal-month-nav'+(idx<1?' hidden':'');
-    next.innerHTML='&#8250;';
-    next.onclick=()=>{ viewMonth++; if(viewMonth>11){viewMonth=0;viewYear++;} renderAll(); };
+    // Header
+    const hdr = document.createElement('div'); hdr.className='cal-mhdr';
+    const prev = mkCalNav('&#8249;', idx>0, () => { vm--; if(vm<0){vm=11;vy--;} renderAll(); });
+    const next = mkCalNav('&#8250;', idx<1, () => { vm++; if(vm>11){vm=0;vy++;} renderAll(); });
+    const title = document.createElement('div'); title.className='cal-mtitle'; title.textContent=`${MONTHS[mo]} ${yr}`;
     hdr.append(prev,title,next); wrap.appendChild(hdr);
-    /* weekdays */
-    const wr=document.createElement('div'); wr.className='cal-weekdays';
-    WDAYS.forEach(d=>{const s=document.createElement('div');s.className='cal-weekday';s.textContent=d;wr.appendChild(s);});
+    // Weekday row
+    const wr = document.createElement('div'); wr.className='cal-wdays';
+    WDAYS.forEach(d => { const s=document.createElement('div'); s.className='cal-wd'; s.textContent=d; wr.appendChild(s); });
     wrap.appendChild(wr);
-    /* days */
-    const grid=document.createElement('div'); grid.className='cal-days';
-    const firstDay=new Date(year,month,1).getDay();
-    const daysInMonth=new Date(year,month+1,0).getDate();
-    for (let i=0;i<firstDay;i++) grid.appendChild(document.createElement('div'));
-    for (let d=1;d<=daysInMonth;d++) {
-      const date=new Date(year,month,d);
-      const cell=document.createElement('div'); cell.className='cal-day';
-      const isPast=date<todayD;
-      if (isPast) cell.classList.add('disabled');
-      if (dKey(date)===dKey(todayD)) cell.classList.add('today');
-      /* range state */
-      const effEnd=(selecting&&hoverD)?hoverD:endD;
-      if (startD) {
-        const lo=effEnd?(effEnd<startD?effEnd:startD):startD;
-        const hi=effEnd?(effEnd>startD?effEnd:startD):null;
-        const isSt  = dKey(date)===dKey(lo);
-        const isEn  = hi&&dKey(date)===dKey(hi);
-        const isSame= hi&&dKey(lo)===dKey(hi);
-        const inRng = hi&&date>lo&&date<hi;
-        if (isSt){cell.classList.add('selected-start');if(isSame)cell.classList.add('same-day');}
-        if (isEn&&!isSame) cell.classList.add('selected-end');
-        if (inRng){
-          cell.classList.add('in-range');
-          if (date.getDay()===0) cell.classList.add('range-row-start');
-          if (date.getDay()===6) cell.classList.add('range-row-end');
+    // Days
+    const daysGrid = document.createElement('div'); daysGrid.className='cal-days';
+    const firstDay = new Date(yr,mo,1).getDay();
+    const total    = new Date(yr,mo+1,0).getDate();
+    for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement('div'));
+    for (let d=1;d<=total;d++) {
+      const date = new Date(yr,mo,d);
+      const cell = document.createElement('div'); cell.className='day';
+      const isPast = date < TODAY;
+      if (isPast) { cell.classList.add('dis'); }
+      if (dKey(date)===dKey(TODAY)) cell.classList.add('tod');
+      // Range coloring
+      const effEnd = (picking && hover) ? hover : end;
+      if (start) {
+        const lo = effEnd ? (effEnd<start?effEnd:start) : start;
+        const hi = effEnd ? (effEnd>start?effEnd:start) : null;
+        const isSt   = dKey(date)===dKey(lo);
+        const isEn   = hi && dKey(date)===dKey(hi);
+        const isSame = hi && dKey(lo)===dKey(hi);
+        const inRng  = hi && date>lo && date<hi;
+        if (isSt)  { cell.classList.add('s0'); if(isSame) cell.classList.add('sd'); }
+        if (isEn && !isSame) cell.classList.add('s1');
+        if (inRng) {
+          cell.classList.add('inr');
+          if (date.getDay()===0) cell.classList.add('rl');
+          if (date.getDay()===6) cell.classList.add('rr');
         }
       }
-      cell.textContent=d;
+      cell.textContent = d;
       if (!isPast) {
-        cell.onclick=()=>handleClick(date);
-        cell.onmouseenter=()=>{ if(selecting){hoverD=date;renderMonths();} };
+        cell.onclick = () => {
+          if (!picking || !start) {
+            start=date; end=null; picking=true; hover=null; activeQ=null;
+          } else {
+            if      (dKey(date)===dKey(start)) end=date;
+            else if (date<start) { end=start; start=date; }
+            else                   end=date;
+            picking=false; hover=null; syncState();
+          }
+          renderAll(); updateTrigger(); updateFooter();
+        };
+        cell.onmouseenter = () => { if(picking){ hover=date; buildMonths(); } };
       }
-      grid.appendChild(cell);
+      daysGrid.appendChild(cell);
     }
-    wrap.appendChild(grid);
+    wrap.appendChild(daysGrid);
     return wrap;
   }
 
-  function handleClick(date) {
-    if (!selecting||!startD) {
-      startD=date; endD=null; selecting=true; hoverD=null; activeQ=null;
-    } else {
-      if      (dKey(date)===dKey(startD)){endD=date;}
-      else if (date<startD){endD=startD;startD=date;}
-      else    {endD=date;}
-      selecting=false; hoverD=null;
-      pushToState();
-    }
-    renderAll(); updateTrigger(); updateFooter();
+  function mkCalNav(html, hide, fn) {
+    const b = document.createElement('button'); b.type='button';
+    b.className = `cal-mnav${hide?' hide':''}`; b.innerHTML = html; b.onclick=fn; return b;
   }
 
-  function renderAll(){ renderQuickBar(); renderMonths(); updateFooter(); }
+  function renderAll() { buildQuickBar(); buildMonths(); updateFooter(); }
 
   function openPanel() {
-    closeAllExcept('__cal__');
-    panelOpen=true;
-    ePanel.style.display='block';
-    ePanel.classList.remove('closing');
-    eTrig.classList.add('open');
-    eTrig.setAttribute('aria-expanded','true');
-    eTChev.style.transform='rotate(180deg)';
+    closeAllBut('__cal__');
+    open=true;
+    const p=$('cal-panel'); p.style.display='block'; p.classList.remove('out');
+    $('cal-trig').classList.add('open'); $('cal-trig').setAttribute('aria-expanded','true');
+    $('chv-cal').style.transform='rotate(180deg)';
     renderAll();
   }
   function closePanel() {
-    if (!panelOpen) return;
-    panelOpen=false;
-    eTrig.classList.remove('open');
-    eTrig.setAttribute('aria-expanded','false');
-    eTChev.style.transform='';
-    ePanel.classList.add('closing');
-    ePanel.addEventListener('animationend',()=>{
-      ePanel.style.display='none'; ePanel.classList.remove('closing');
-    },{once:true});
+    if (!open) return; open=false;
+    $('cal-trig').classList.remove('open'); $('cal-trig').setAttribute('aria-expanded','false');
+    $('chv-cal').style.transform='';
+    const p=$('cal-panel'); p.classList.add('out');
+    p.addEventListener('animationend',()=>{ p.style.display='none'; p.classList.remove('out'); },{once:true});
   }
 
-  eTrig.addEventListener('click',e=>{e.stopPropagation();panelOpen?closePanel():openPanel();});
-  document.addEventListener('click',e=>{if(!document.getElementById('cal-wrapper').contains(e.target))closePanel();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
-  eClear.onclick=()=>{ startD=null;endD=null;selecting=false;hoverD=null;activeQ=null; renderAll();updateTrigger();state.calStart=null;state.calEnd=null;updateFeeCard(); };
-  eApply.onclick=()=>{ pushToState(); closePanel(); };
+  $('cal-trig').addEventListener('click', e => { e.stopPropagation(); open ? closePanel() : openPanel(); });
+  document.addEventListener('click', e => { if(!$('wr-cal').contains(e.target)) closePanel(); });
+  $('cal-clear').onclick = () => {
+    start=null; end=null; picking=false; hover=null; activeQ=null;
+    renderAll(); updateTrigger(); S.calStart=null; S.calEnd=null; updateFee();
+  };
+  $('cal-apply').onclick = () => { syncState(); closePanel(); };
 
-  /* init */
-  updateTrigger();
-  pushToState();
+  updateTrigger(); syncState();
 })();
 
-/* ── GLOBAL OUTSIDE-CLICK CLOSE ─────────────────────────────── */
+/* ─────────────────────────────────────────
+   GLOBAL CLOSE ON OUTSIDE CLICK / ESC
+───────────────────────────────────────── */
 document.addEventListener('click', e => {
-  ['country','visatype','appttype','biometrics','consular'].forEach(k => {
-    const wrap = document.getElementById(`${k}-wrapper`);
-    const menu = document.getElementById(`${k}-menu`);
-    const btn  = document.getElementById(`${k}-btn`);
-    const chev = document.getElementById(`${k}-chev`);
-    if (wrap && menu && btn && !wrap.contains(e.target))
-      closeDD(menu, chev, btn);
+  DROPDOWNS.forEach(k => {
+    const w = $(`wr-${k}`);
+    if (w && !w.contains(e.target)) closeDD(`menu-${k}`, `chv-${k}`, `btn-${k}`);
   });
 });
-document.addEventListener('keydown', e => {
-  if (e.key==='Escape') closeAllExcept('__none__');
-});
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeAllBut('__none__'); });
 
-/* ── INIT ───────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────
+   UTILITY: create a list item
+───────────────────────────────────────── */
+function mkLi(cls, html) {
+  const li = document.createElement('li');
+  li.setAttribute('role','option'); li.className = cls; li.innerHTML = html; return li;
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
 lucide.createIcons();
 renderBioChips();
-renderConLabel();
-updateFeeCard();
+renderConChips();
+updateFee();
 
 })();
 </script>
 </body>
 </html>
-
