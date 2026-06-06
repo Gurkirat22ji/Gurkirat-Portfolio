@@ -1,857 +1,922 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Estimate your service fee</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-<script>
-  tailwind.config = { theme: { extend: {
-    colors: {
-      primary:'#f15a22', secondary:'#3ee999', tertiary:'#fceacc',
-      't200':'#646464', 't300':'#101010',
-      'ib':'#ffffff', 'iborder':'#d4d7e3', 'itext':'#0b1121', 'iph':'#b2b5c3',
-      'pgbg':'#f4f3ee',
-    },
-    fontFamily:{ inter:['Inter','sans-serif'] },
-  }}};
-</script>
-<style>
-body{font-family:'Inter',sans-serif}
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button{opacity:1}
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Da Marco — Osteria del Trentino | Piacenza</title>
+  <meta name="description" content="L'Osteria del Trentino dal 1910 a Piacenza. Cucina tradizionale piacentina, carni di qualità, bottega storica della città. Via del Castello, 71."/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rust:    { DEFAULT: '#A0522D', light: '#C46B3A', dark: '#7A3E22', muted: '#A0522D22' },
+            parchment: '#F4EDE0',
+            ink:     '#1C1410',
+            stone:   { DEFAULT: '#2A2420', light: '#3A302A', mid: '#4A3E38' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --rust: #A0522D;
+      --rust-light: #C4773E;
+      --parchment: #F4EDE0;
+      --ink: #1C1410;
+      --ink-soft: rgba(28,20,16,0.65);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
-/* ─ Dropdown animations ─ */
-.dd{transform-origin:top;animation:ddIn .14s ease-out forwards}
-@keyframes ddIn{from{opacity:0;transform:scaleY(.93) translateY(-4px)}to{opacity:1;transform:scaleY(1) translateY(0)}}
-.dd.out{animation:ddOut .11s ease-in forwards}
-@keyframes ddOut{from{opacity:1;transform:scaleY(1) translateY(0)}to{opacity:0;transform:scaleY(.93) translateY(-4px)}}
+    body {
+      background: #F4EDE0;
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
 
-/* ─ Option rows ─ */
-.opt{transition:background .08s;cursor:pointer}
-.opt:hover{background:#f9f5f1}
-.opt.on{background:#fef3ea}
-.grp{font-size:11px;font-weight:600;letter-spacing:.06em;color:#b2b5c3;padding:8px 14px 4px;text-transform:uppercase}
+    /* Subtle paper texture */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+    * { position: relative; z-index: 1; }
 
-/* ─ Search input ─ */
-.dds{width:100%;border:none;outline:none;font-size:13px;padding:8px 12px;background:#f9f9f8;color:#0b1121;font-family:'Inter',sans-serif}
-.dds::placeholder{color:#b2b5c3}
+    .font-serif { font-family: 'Libre Baskerville', serif; }
+    .font-sans  { font-family: 'DM Sans', sans-serif; }
 
-/* ─ Chevron ─ */
-.chv{transition:transform .2s ease}
-.chv.open{transform:rotate(180deg)}
+    /* Rust ornamental line */
+    .rust-line { width: 48px; height: 1px; background: var(--rust); }
+    .rust-line-lg { width: 80px; height: 1px; background: var(--rust); }
 
-/* ─ Calendar ─ */
-.cal-btn-trig{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;height:44px;background:#fff;border:1px solid #d4d7e3;border-radius:8px;cursor:pointer;width:100%;font-size:14px;color:#0b1121;font-family:'Inter',sans-serif;transition:border-color .15s}
-.cal-btn-trig:hover{border-color:#9ca3af}
-.cal-btn-trig.open{border-color:#0b1121}
-.cal-trig-range{font-size:14px;font-weight:500;color:#0b1121;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal-trig-range.ph{color:#b2b5c3;font-weight:400}
-.cal-dur{font-size:11px;color:#646464;background:#f4f3ee;padding:2px 8px;border-radius:99px;white-space:nowrap}
-.cal-panel{position:absolute;z-index:70;left:0;background:#fff;border:1px solid #d4d7e3;border-radius:14px;margin-top:6px;box-shadow:0 8px 32px rgba(0,0,0,.11);width:max-content;min-width:100%;animation:calIn .15s ease-out forwards}
-@keyframes calIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.cal-panel.out{animation:calOut .11s ease-in forwards}
-@keyframes calOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-6px)}}
-.cal-inner{padding:18px 20px 16px}
-.cal-qbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f0f0ef}
-.cq{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid #d4d7e3;background:transparent;color:#646464;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:'Inter',sans-serif}
-.cq:hover{border-color:#f15a22;color:#f15a22;background:#fff8f5}
-.cq.on{background:#f15a22;color:#fff;border-color:#f15a22}
-.cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
-@media(max-width:580px){.cal-grid{grid-template-columns:1fr}}
-.cal-mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cal-mnav{background:none;border:none;cursor:pointer;color:#646464;padding:4px 6px;border-radius:6px;font-size:16px;line-height:1;transition:background .1s,color .1s}
-.cal-mnav:hover{background:#f4f3ee;color:#101010}
-.cal-mnav.hide{visibility:hidden;pointer-events:none}
-.cal-mtitle{font-size:13px;font-weight:600;color:#101010}
-.cal-wdays,.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
-.cal-wdays{text-align:center;margin-bottom:4px}
-.cal-wd{font-size:11px;color:#b2b5c3;padding:2px 0}
-.cal-days{gap:1px}
-.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;border-radius:6px;transition:background .1s,color .1s;position:relative;color:#101010;user-select:none}
-.day:hover:not(.dis):not(.s0):not(.s1){background:#f4f3ee}
-.day.dis{color:#b2b5c3;opacity:.45;pointer-events:none}
-.day.tod{font-weight:700}
-.day.tod::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#f15a22}
-.day.s0,.day.s1{background:#f15a22!important;color:#fff!important;font-weight:600;border-radius:6px}
-.day.inr{background:#fceacc;color:#101010;border-radius:0}
-.day.s0:not(.sd){border-radius:6px 0 0 6px}
-.day.s1:not(.sd){border-radius:0 6px 6px 0}
-.day.sd{border-radius:6px!important}
-.day.rl{border-radius:6px 0 0 6px}
-.day.rr{border-radius:0 6px 6px 0}
-.cal-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid #f0f0ef}
-.cal-finfo{font-size:12px;color:#646464}
-.cal-finfo strong{color:#101010;font-weight:600}
-.cbtn{font-size:13px;padding:7px 16px;border-radius:99px;cursor:pointer;border:1px solid #d4d7e3;background:transparent;color:#646464;transition:all .12s;font-family:'Inter',sans-serif}
-.cbtn:hover{border-color:#9ca3af;color:#101010}
-.cbtn.apply{background:#101010;color:#fff;border-color:#101010;font-weight:500}
-.cbtn.apply:hover{background:#f15a22;border-color:#f15a22;color:#fff}
-.cal-hint{font-size:12px;color:#646464;margin-top:6px;display:flex;align-items:center;gap:6px}
-.cal-hint-dot{width:6px;height:6px;border-radius:50%;background:#3ee999;flex-shrink:0}
-</style>
+    /* Label style */
+    .eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--rust);
+    }
+
+    /* Navbar */
+    #navbar { transition: all 0.45s ease; }
+    #navbar.scrolled {
+      background: rgba(244,237,224,0.97);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(160,82,45,0.15);
+    }
+    .nav-link {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(28,20,16,0.6);
+      transition: color 0.3s;
+    }
+    .nav-link:hover { color: var(--rust); }
+
+    /* Hero */
+    .hero-bg {
+      background:
+        linear-gradient(to bottom, rgba(28,20,16,0.55) 0%, rgba(28,20,16,0.3) 60%, rgba(28,20,16,0.7) 100%),
+        url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&q=85') center/cover no-repeat;
+    }
+
+    /* Buttons */
+    .btn-rust {
+      background: var(--rust);
+      color: var(--parchment);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 13px 34px;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+    .btn-rust:hover {
+      background: var(--rust-light);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(160,82,45,0.25);
+    }
+    .btn-outline-rust {
+      border: 1px solid rgba(160,82,45,0.5);
+      color: var(--rust);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 13px 34px;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+    .btn-outline-rust:hover {
+      background: rgba(160,82,45,0.07);
+      border-color: var(--rust);
+      transform: translateY(-2px);
+    }
+
+    /* Cards */
+    .menu-card {
+      background: #fff;
+      border: 1px solid rgba(160,82,45,0.1);
+      transition: all 0.4s ease;
+      overflow: hidden;
+    }
+    .menu-card:hover {
+      box-shadow: 0 16px 48px rgba(28,20,16,0.12);
+      transform: translateY(-5px);
+      border-color: rgba(160,82,45,0.3);
+    }
+    .menu-card-img img { transition: transform 0.6s ease; }
+    .menu-card:hover .menu-card-img img { transform: scale(1.07); }
+
+    /* Gallery */
+    .gallery-item { overflow: hidden; }
+    .gallery-item img {
+      transition: transform 0.65s ease;
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .gallery-item:hover img { transform: scale(1.08); }
+
+    /* Reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Form */
+    .form-input {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(160,82,45,0.2);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      width: 100%;
+      padding: 12px 16px;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--rust);
+      background: #fff;
+    }
+    .form-input::placeholder { color: rgba(28,20,16,0.35); }
+
+    /* Tab system */
+    .tab-btn { transition: all 0.3s; border-bottom: 2px solid transparent; }
+    .tab-btn.active { color: var(--rust); border-bottom-color: var(--rust); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: grid; }
+
+    /* Orari table */
+    .orari-row { border-bottom: 1px solid rgba(160,82,45,0.1); }
+    .orari-row:last-child { border-bottom: none; }
+
+    /* Mobile nav */
+    #mobile-menu { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+    #mobile-menu.open { max-height: 350px; }
+
+    /* Wax seal badge */
+    .wax-seal {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, #C4773E, #7A3E22);
+      display: flex; align-items: center; justify-center: center;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(160,82,45,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+
+    /* Divider ornament */
+    .ornament { color: var(--rust); opacity: 0.5; font-size: 1.1rem; }
+
+    /* Testimonials */
+    .review-card {
+      background: #fff;
+      border: 1px solid rgba(160,82,45,0.1);
+      transition: box-shadow 0.3s;
+    }
+    .review-card:hover { box-shadow: 0 8px 32px rgba(28,20,16,0.08); }
+
+    /* Info cards */
+    .info-card {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(160,82,45,0.15);
+      backdrop-filter: blur(6px);
+    }
+
+    /* Special offer */
+    .offer-bg {
+      background:
+        linear-gradient(135deg, rgba(28,20,16,0.92) 0%, rgba(80,40,20,0.88) 100%),
+        url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80') center/cover no-repeat;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--parchment); }
+    ::-webkit-scrollbar-thumb { background: var(--rust); border-radius: 3px; }
+  </style>
 </head>
-<body class="bg-pgbg min-h-screen px-4 md:px-6 py-12 flex flex-col items-center">
+<body>
 
-<div class="w-full max-w-[1200px] flex flex-col gap-5">
+<!-- ══════════ NAVBAR ══════════ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 px-6 lg:px-12 py-5">
+  <div class="max-w-6xl mx-auto flex items-center justify-between">
 
-  <!-- Header -->
-  <div class="flex flex-col mb-4">
-    <span class="text-sm bg-tertiary rounded-full px-3 py-1 text-t300 font-normal tracking-wide w-fit mb-2">PRICING</span>
-    <h1 class="text-t300 text-5xl md:text-6xl font-bold leading-none">Estimate your service fee</h1>
+    <!-- Logo -->
+    <a href="#home" class="flex items-center gap-3 group">
+      <div class="flex flex-col leading-none">
+        <span class="font-serif text-xl tracking-wider text-ink" style="font-size:1.1rem">Da Marco</span>
+        <span class="eyebrow" style="font-size:0.55rem; letter-spacing:0.2em">Osteria del Trentino · 1910</span>
+      </div>
+    </a>
+
+    <!-- Desktop links -->
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#home"        class="nav-link">Home</a>
+      <a href="#storia"      class="nav-link">Chi Siamo</a>
+      <a href="#menu"        class="nav-link">Menu</a>
+      <a href="#gallery"     class="nav-link">Gallery</a>
+      <a href="#contatti"    class="nav-link">Contatti</a>
+      <a href="#contatti"    class="btn-rust text-xs py-2.5 px-5">Prenota</a>
+    </div>
+
+    <!-- Hamburger -->
+    <button onclick="toggleMenu()" class="md:hidden p-2 flex flex-col gap-1.5">
+      <span class="block w-6 h-px bg-ink transition-all"></span>
+      <span class="block w-4 h-px bg-rust ml-auto transition-all"></span>
+      <span class="block w-6 h-px bg-ink transition-all"></span>
+    </button>
   </div>
 
-  <!-- Card -->
-  <div class="flex flex-col gap-6 p-6 md:p-8 rounded-2xl bg-white shadow-sm border border-gray-100">
-    <div class="flex flex-col lg:flex-row items-start gap-6">
-
-      <!-- LEFT -->
-      <div class="flex-1 min-w-0 space-y-6">
-        <h3 class="text-lg font-semibold text-t300">Visa Application Details</h3>
-
-        <!-- Row 1 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-
-          <!-- Country -->
-          <div class="relative" id="wr-country">
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Application Country</label>
-            <button id="btn-country" type="button" aria-haspopup="listbox" aria-expanded="false"
-              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
-              <div class="flex items-center gap-2 min-w-0">
-                <span id="country-flag" class="flex-shrink-0">🇮🇳</span>
-                <span id="country-lbl" class="truncate">India</span>
-              </div>
-              <i data-lucide="chevron-down" id="chv-country" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
-            </button>
-            <div id="menu-country" class="dd hidden absolute z-50 w-64 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
-              <div class="border-b border-gray-100 px-1 pt-1">
-                <input id="s-country" type="text" class="dds" placeholder="Search country…" autocomplete="off"/>
-              </div>
-              <ul id="list-country" class="py-1 max-h-56 overflow-y-auto" role="listbox"></ul>
-            </div>
-          </div>
-
-          <!-- Visa Type -->
-          <div class="relative" id="wr-vtype">
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Visa Type</label>
-            <button id="btn-vtype" type="button" aria-haspopup="listbox" aria-expanded="false"
-              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
-              <span id="vtype-lbl" class="truncate">F-1 — Academic Student</span>
-              <i data-lucide="chevron-down" id="chv-vtype" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
-            </button>
-            <div id="menu-vtype" class="dd hidden absolute z-50 w-72 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
-              <div class="border-b border-gray-100 px-1 pt-1">
-                <input id="s-vtype" type="text" class="dds" placeholder="Search visa type…" autocomplete="off"/>
-              </div>
-              <ul id="list-vtype" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
-            </div>
-          </div>
-
-          <!-- Appointment Type -->
-          <div class="relative" id="wr-atype">
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Appointment Type</label>
-            <button id="btn-atype" type="button" aria-haspopup="listbox" aria-expanded="false"
-              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
-              <div class="flex items-center gap-2 min-w-0">
-                <span id="atype-dot" class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
-                <span id="atype-lbl" class="truncate">Regular</span>
-              </div>
-              <i data-lucide="chevron-down" id="chv-atype" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
-            </button>
-            <div id="menu-atype" class="dd hidden absolute z-50 w-72 mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
-              <ul id="list-atype" class="py-1 max-h-64 overflow-y-auto" role="listbox"></ul>
-            </div>
-          </div>
-
-          <!-- Applicants -->
-          <div>
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Total Applicants</label>
-            <input id="inp-applicants" type="number" value="1" min="1" max="20" placeholder="Enter"
-              class="w-full h-11 px-3.5 py-2 bg-ib border border-iborder rounded-lg text-sm text-itext focus:outline-none focus:border-itext placeholder-iph"/>
-          </div>
-        </div>
-
-        <!-- Info banner -->
-        <p class="text-sm text-t200 flex items-center gap-2 border-l-2 border-primary pl-3 py-1">
-          <i data-lucide="calendar" class="w-4 h-4 text-primary flex-shrink-0"></i>
-          Latest slot seen in your preferences: 2026-07-27, reported an hour ago.
-        </p>
-
-        <!-- Row 2: Locations -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          <!-- Biometrics multi-select -->
-          <div class="relative" id="wr-bio">
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Preferred Biometrics Locations (VAC)</label>
-            <button id="btn-bio" type="button" aria-haspopup="listbox" aria-expanded="false"
-              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
-              <div id="chips-bio" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
-              <span id="ph-bio" class="text-iph text-sm hidden flex-1">Select VAC location(s)</span>
-              <i data-lucide="chevron-down" id="chv-bio" class="chv w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
-            </button>
-            <div id="menu-bio" class="dd hidden absolute z-50 w-full mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
-              <ul id="list-bio" class="py-1 max-h-52 overflow-y-auto" role="listbox" aria-multiselectable="true"></ul>
-            </div>
-          </div>
-
-          <!-- Consular multi-select -->
-          <div class="relative" id="wr-con">
-            <label class="block text-sm text-t200 mb-1 ml-0.5">Preferred Consular / Embassy Location</label>
-            <button id="btn-con" type="button" aria-haspopup="listbox" aria-expanded="false"
-              class="w-full min-h-[44px] px-3.5 py-2 bg-ib border border-iborder rounded-lg flex items-center justify-between gap-2 text-sm text-itext hover:border-gray-400 transition-colors focus:outline-none">
-              <div id="chips-con" class="flex flex-wrap gap-1 flex-1 min-w-0"></div>
-              <span id="ph-con" class="text-iph text-sm flex-1">Select Consular Locations</span>
-              <i data-lucide="chevron-down" id="chv-con" class="chv w-4 h-4 text-gray-400 flex-shrink-0"></i>
-            </button>
-            <div id="menu-con" class="dd hidden absolute z-50 w-full mt-1 bg-white border border-iborder rounded-xl shadow-lg overflow-hidden">
-              <ul id="list-con" class="py-1 max-h-52 overflow-y-auto" role="listbox" aria-multiselectable="true"></ul>
-            </div>
-          </div>
-        </div>
-        <p class="italic text-sm text-t200 -mt-2">More locations yield early appointments; costs less.</p>
-
-        <!-- Row 3: Calendar + Notice -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          <!-- Calendar -->
-          <div>
-            <label class="block text-sm font-medium text-t200 mb-1 ml-0.5">Preferred Appointment Window</label>
-            <div class="relative" id="wr-cal">
-              <button type="button" id="cal-trig" class="cal-btn-trig" aria-haspopup="true" aria-expanded="false">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0">
-                  <i data-lucide="calendar" style="width:16px;height:16px;color:#f15a22;flex-shrink:0"></i>
-                  <span class="cal-trig-range" id="cal-range-txt">05/21/2026 → 09/10/2026</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span class="cal-dur" id="cal-dur-txt">113 days</span>
-                  <i data-lucide="chevron-down" id="chv-cal" style="width:16px;height:16px;color:#646464;transition:transform .2s"></i>
-                </div>
-              </button>
-              <div class="cal-panel" id="cal-panel" style="display:none">
-                <div class="cal-inner">
-                  <div class="cal-qbar" id="cal-qbar"></div>
-                  <div class="cal-grid" id="cal-grid"></div>
-                  <div class="cal-foot">
-                    <div class="cal-finfo" id="cal-foot-info">Select a start date</div>
-                    <div style="display:flex;gap:8px">
-                      <button type="button" class="cbtn" id="cal-clear">Clear</button>
-                      <button type="button" class="cbtn apply" id="cal-apply">Apply</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="cal-hint">
-              <span class="cal-hint-dot"></span>
-              <span id="cal-hint-txt">Wider window = more slot options, lower cost</span>
-            </div>
-          </div>
-
-          <!-- Notice Period -->
-          <div>
-            <label for="inp-notice" class="text-sm font-medium text-t200 mb-1 ml-0.5 inline-flex items-center gap-1.5">
-              Notice Period
-              <button type="button" aria-label="Minimum days before appointment" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                <i data-lucide="info" class="w-4 h-4"></i>
-              </button>
-            </label>
-            <div class="flex items-center gap-2">
-              <input id="inp-notice" type="number" inputmode="numeric" min="0" max="90" value="3"
-                class="w-20 h-11 px-3 py-2 bg-ib border border-iborder rounded-lg text-itext focus:outline-none focus:border-gray-500 text-sm text-center"/>
-              <span class="text-sm text-t200">days</span>
-            </div>
-            <p class="text-sm text-t200 mt-2">Enter <strong>0</strong> to allow next-day appointments.</p>
-          </div>
-        </div>
-
-      </div><!-- /left -->
-
-      <!-- RIGHT: Fee Card -->
-      <div class="w-full lg:w-[300px] lg:flex-shrink-0">
-        <div class="bg-tertiary p-8 rounded-2xl flex flex-col items-center text-center">
-          <h3 class="text-lg font-semibold text-t300">Service Fee</h3>
-          <p class="text-sm text-t200 mt-2 leading-relaxed">
-            The cost to book a <span id="fc-atype">Regular</span>
-            <span id="fc-vtype">F-1</span> visa appointment for
-            <span id="fc-applicants">1</span> applicant(s) within a
-            <span id="fc-window">113</span>-day window is
-          </p>
-          <div class="flex gap-1 items-end justify-center text-t300 font-bold text-2xl my-4">
-            <span class="mb-2">$</span>
-            <span id="fc-price" class="text-7xl font-bold leading-none">75</span>
-          </div>
-          <div id="fc-disc" class="mb-3 text-xs text-green-700 bg-green-50 rounded-full px-3 py-1 font-medium hidden">
-            <span id="fc-disc-txt"></span>
-          </div>
-          <button type="button"
-            class="flex items-center gap-2 bg-black border border-black hover:border-primary rounded-full text-white hover:text-primary px-5 py-2 text-sm transition-all duration-300 hover:scale-95 hover:shadow-lg">
-            <span>Pay Now</span>
-            <i data-lucide="chevron-down" class="w-3 h-3"></i>
-          </button>
-        </div>
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="md:hidden bg-parchment border-t border-rust/10 mt-3">
+    <div class="flex flex-col py-4 max-w-6xl mx-auto">
+      <a href="#home"     onclick="closeMenu()" class="nav-link px-6 py-3 block">Home</a>
+      <a href="#storia"   onclick="closeMenu()" class="nav-link px-6 py-3 block">Chi Siamo</a>
+      <a href="#menu"     onclick="closeMenu()" class="nav-link px-6 py-3 block">Menu</a>
+      <a href="#gallery"  onclick="closeMenu()" class="nav-link px-6 py-3 block">Gallery</a>
+      <a href="#contatti" onclick="closeMenu()" class="nav-link px-6 py-3 block">Contatti</a>
+      <div class="px-6 pt-3">
+        <a href="#contatti" onclick="closeMenu()" class="btn-rust block text-center">Prenota un Tavolo</a>
       </div>
+    </div>
+  </div>
+</nav>
 
-    </div><!-- /top row -->
+<!-- ══════════ HERO ══════════ -->
+<section id="home" class="hero-bg min-h-screen flex items-center justify-center relative">
 
-    <!-- Trust bar -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-gray-200 text-center text-primary text-sm">
-      <span>✓ Track the progress online</span>
-      <span>✓ Dedicated human assistance</span>
-      <span>✓ 100% Refund</span>
+  <!-- Side year tag -->
+  <div class="absolute left-8 bottom-16 hidden xl:flex flex-col items-center gap-3" style="z-index:2">
+    <div class="w-px h-20 bg-gradient-to-b from-transparent to-parchment/40"></div>
+    <span class="eyebrow [writing-mode:vertical-lr] tracking-[0.3em] text-parchment/60" style="font-size:0.55rem">Piacenza · Italia</span>
+  </div>
+
+  <div class="max-w-4xl mx-auto px-6 text-center" style="z-index:2">
+    <p class="eyebrow text-parchment/70 mb-5 reveal">Dal 1910 · Bottega Storica di Piacenza</p>
+    <div class="flex items-center justify-center gap-4 mb-6 reveal">
+      <div class="rust-line-lg" style="background:rgba(244,237,224,0.4)"></div>
+      <span class="ornament text-parchment/50">✦</span>
+      <div class="rust-line-lg" style="background:rgba(244,237,224,0.4)"></div>
+    </div>
+    <h1 class="font-serif text-5xl md:text-7xl lg:text-8xl text-parchment font-normal leading-tight mb-3 reveal">
+      L'Anima della
+    </h1>
+    <h1 class="font-serif text-5xl md:text-7xl lg:text-8xl font-normal leading-tight mb-8 reveal">
+      <em style="color:#C4773E">Cucina Piacentina</em>
+    </h1>
+    <p class="font-sans text-parchment/65 text-base md:text-lg max-w-lg mx-auto mb-10 font-light leading-relaxed reveal">
+      La tradizione culinaria di Piacenza incontra il concetto di osteria in chiave moderna. Carni di eccellenza, sapori autentici, una storia lunga oltre un secolo.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 reveal">
+      <a href="#menu" class="btn-rust">Scopri il Menu</a>
+      <a href="#contatti" class="btn-outline-rust" style="border-color:rgba(244,237,224,0.4);color:#F4EDE0">Prenota un Tavolo</a>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" style="z-index:2">
+    <span class="eyebrow text-parchment/40" style="font-size:0.55rem">Scorri</span>
+    <div class="w-px h-8 bg-gradient-to-b from-parchment/40 to-transparent animate-pulse"></div>
+  </div>
+</section>
+
+<!-- ══════════ QUICK INFO BAR ══════════ -->
+<div style="background:#1C1410" class="py-6 border-y border-rust/20">
+  <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+    <div class="reveal">
+      <div class="font-serif text-3xl text-parchment font-normal" style="color:#C4773E">1910</div>
+      <div class="eyebrow mt-1 text-parchment/50">Anno di Fondazione</div>
+    </div>
+    <div class="reveal">
+      <div class="font-serif text-3xl font-normal" style="color:#C4773E">Bottega</div>
+      <div class="eyebrow mt-1 text-parchment/50">Storica di Piacenza</div>
+    </div>
+    <div class="reveal">
+      <div class="font-serif text-3xl font-normal" style="color:#C4773E">5ª</div>
+      <div class="eyebrow mt-1 text-parchment/50">Generazione</div>
+    </div>
+    <div class="reveal">
+      <div class="font-serif text-3xl font-normal" style="color:#C4773E">100%</div>
+      <div class="eyebrow mt-1 text-parchment/50">Carne Selezionata</div>
     </div>
   </div>
 </div>
 
-<script>
-(() => {
-'use strict';
+<!-- ══════════ STORIA (CHI SIAMO) ══════════ -->
+<section id="storia" class="py-28 px-6">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
 
-/* ─────────────────────────────────────────
-   DATA
-───────────────────────────────────────── */
-const COUNTRIES = [
-  {code:'IN',flag:'🇮🇳',name:'India'},{code:'PK',flag:'🇵🇰',name:'Pakistan'},
-  {code:'BD',flag:'🇧🇩',name:'Bangladesh'},{code:'NP',flag:'🇳🇵',name:'Nepal'},
-  {code:'LK',flag:'🇱🇰',name:'Sri Lanka'},{code:'CN',flag:'🇨🇳',name:'China'},
-  {code:'PH',flag:'🇵🇭',name:'Philippines'},{code:'MX',flag:'🇲🇽',name:'Mexico'},
-  {code:'BR',flag:'🇧🇷',name:'Brazil'},{code:'NG',flag:'🇳🇬',name:'Nigeria'},
-  {code:'GH',flag:'🇬🇭',name:'Ghana'},{code:'ET',flag:'🇪🇹',name:'Ethiopia'},
-  {code:'EG',flag:'🇪🇬',name:'Egypt'},{code:'CO',flag:'🇨🇴',name:'Colombia'},
-  {code:'VN',flag:'🇻🇳',name:'Vietnam'},{code:'ID',flag:'🇮🇩',name:'Indonesia'},
-  {code:'TR',flag:'🇹🇷',name:'Turkey'},{code:'KR',flag:'🇰🇷',name:'South Korea'},
-  {code:'JP',flag:'🇯🇵',name:'Japan'},{code:'GB',flag:'🇬🇧',name:'United Kingdom'},
-  {code:'DE',flag:'🇩🇪',name:'Germany'},{code:'FR',flag:'🇫🇷',name:'France'},
-  {code:'CA',flag:'🇨🇦',name:'Canada'},{code:'AU',flag:'🇦🇺',name:'Australia'},
-];
+    <!-- Image -->
+    <div class="relative reveal order-2 md:order-1">
+      <div class="aspect-[4/5] overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=800&q=80"
+          alt="Interno osteria" class="w-full h-full object-cover"/>
+      </div>
+      <!-- Floating tag -->
+      <div class="absolute -bottom-5 -right-5 info-card p-5 max-w-[160px]">
+        <div class="font-serif text-rust text-xs italic mb-1">Dal</div>
+        <div class="font-serif text-3xl text-ink leading-none">1910</div>
+        <div class="eyebrow mt-2" style="font-size:0.55rem">Bottega Storica</div>
+      </div>
+      <!-- Top-left accent bar -->
+      <div class="absolute -top-3 -left-3 w-16 h-16 border-t-2 border-l-2" style="border-color:var(--rust)"></div>
+    </div>
 
-const VISA_GROUPS = [
-  { group:'Visitor & Tourism', items:[
-    {code:'B1/B2',label:'B1/B2 — Visitor (Business / Tourism)'},
-    {code:'B1',   label:'B1 — Business Visitor'},
-    {code:'B2',   label:'B2 — Tourist / Pleasure'},
-  ]},
-  { group:'Student & Exchange', items:[
-    {code:'F-1',label:'F-1 — Academic Student'},
-    {code:'F-2',label:'F-2 — Spouse / Child of F-1'},
-    {code:'M-1',label:'M-1 — Vocational Student'},
-    {code:'J-1',label:'J-1 — Exchange Visitor'},
-    {code:'J-2',label:'J-2 — Spouse / Child of J-1'},
-  ]},
-  { group:'Work & Employment', items:[
-    {code:'H-1B', label:'H-1B — Specialty Occupation (Cap)'},
-    {code:'H-1B1',label:'H-1B1 — Chile / Singapore Free Trade'},
-    {code:'H-2A', label:'H-2A — Temporary Agricultural Worker'},
-    {code:'H-2B', label:'H-2B — Temporary Non-Agricultural Worker'},
-    {code:'H-4',  label:'H-4 — Dependent of H-1B Holder'},
-    {code:'L-1A', label:'L-1A — Intracompany Manager / Executive'},
-    {code:'L-1B', label:'L-1B — Intracompany Specialized Knowledge'},
-    {code:'L-2',  label:'L-2 — Dependent of L-1 Holder'},
-    {code:'O-1',  label:'O-1 — Extraordinary Ability / Achievement'},
-    {code:'O-2',  label:'O-2 — Assistant to O-1'},
-    {code:'P-1',  label:'P-1 — Athlete / Entertainment Group'},
-    {code:'TN',   label:'TN — Canadian/Mexican Trade Agreement'},
-    {code:'E-1',  label:'E-1 — Treaty Trader'},
-    {code:'E-2',  label:'E-2 — Treaty Investor'},
-    {code:'E-3',  label:'E-3 — Australian Specialty Occupation'},
-  ]},
-  { group:'Other Non-Immigrant', items:[
-    {code:'C-1',   label:'C-1 — Transit Visa'},
-    {code:'C-1/D', label:'C-1/D — Crew Member Transit'},
-    {code:'K-1',   label:'K-1 — Fiancé(e) of US Citizen'},
-    {code:'K-3',   label:'K-3 — Spouse of US Citizen (abroad)'},
-    {code:'G-1-4', label:'G-1 to G-4 — International Organization'},
-  ]},
-];
+    <!-- Text -->
+    <div class="reveal order-1 md:order-2">
+      <p class="eyebrow mb-4">La Nostra Storia</p>
+      <div class="rust-line mb-6"></div>
+      <h2 class="font-serif text-4xl md:text-5xl text-ink font-normal leading-tight mb-6">
+        Un'Osteria Nata<br/><em style="color:var(--rust)">dalla Tradizione</em>
+      </h2>
+      <p class="font-sans text-sm leading-relaxed mb-4" style="color:var(--ink-soft)">
+        L'Osteria del Trentino nasce nel <strong>1910</strong> quando un signore abitante di Trento, ancora Austriaca, si trasferì a Piacenza. Ad oggi è rimasto il nome e l'Osteria è entrata a far parte delle <strong>Botteghe Storiche della città</strong>.
+      </p>
+      <p class="font-sans text-sm leading-relaxed mb-4" style="color:var(--ink-soft)">
+        <strong>Marco Piazza</strong>, proveniente dal Castello di Rivalta, ha rilevato l'attività insieme alla moglie <strong>Donatella</strong> e i figli <strong>Lorenzo</strong> e <strong>Daniele</strong>. Marco, cresciuto nella macelleria di famiglia come allievo del fratello Carlo, propone carni di grandissima qualità.
+      </p>
+      <p class="font-sans text-sm leading-relaxed mb-8" style="color:var(--ink-soft)">
+        Ben presto l'Osteria del Trentino si è imposta nella realtà ristorativa della città di Piacenza. La cucina è improntata su preparazioni legate alla tradizione piacentina e la <strong>carne troneggia</strong> tra le diverse proposte, valorizzando i tagli del quinto quarto ormai quasi dimenticati.
+      </p>
 
-const APPT_TYPES = [
-  {code:'regular',   label:'Regular',                    desc:'Standard interview + biometrics (VAC + Consulate)',               dot:'bg-green-400',  badge:'Most common'},
-  {code:'expedited', label:'Expedited',                  desc:'Urgent travel — faster scheduling, limited slots',                dot:'bg-orange-400', badge:'Limited slots'},
-  {code:'waiver',    label:'Interview Waiver (Drop-Box)',desc:'Skip interview — eligible repeat B1/B2 applicants only',          dot:'bg-blue-400',   badge:'Eligibility required'},
-  {code:'renewal',   label:'Renewal — Same Visa Class',  desc:'Renewal of same visa category within validity gap',              dot:'bg-purple-400', badge:''},
-];
-
-const VAC_LOCS = [
-  {city:'New Delhi', full:'New Delhi VAC'},
-  {city:'Mumbai',    full:'Mumbai VAC'},
-  {city:'Chennai',   full:'Chennai VAC'},
-  {city:'Hyderabad', full:'Hyderabad VAC'},
-  {city:'Kolkata',   full:'Kolkata VAC'},
-];
-
-const CON_LOCS = [
-  {label:'New Delhi — U.S. Embassy',           note:'Serves: Delhi, Punjab, UP, Rajasthan & more'},
-  {label:'Mumbai — U.S. Consulate General',    note:'Serves: Maharashtra, Goa, Gujarat & more'},
-  {label:'Chennai — U.S. Consulate General',   note:'Serves: Tamil Nadu, Kerala, Karnataka & more'},
-  {label:'Hyderabad — U.S. Consulate General', note:'Serves: Telangana, Andhra Pradesh'},
-  {label:'Kolkata — U.S. Consulate General',   note:'Serves: West Bengal, Odisha, North-East India'},
-];
-
-// Price by number of consular locations selected (0 = no biometrics selected)
-const PRICE_BY_CON = {0:0, 1:155, 2:130, 3:105, 4:85, 5:75};
-
-const CAL_QUICKS = [
-  {label:'1 week',days:7},{label:'2 weeks',days:14},{label:'1 month',days:30},
-  {label:'3 months',days:90},{label:'6 months',days:180},{label:'1 year',days:365},
-];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const WDAYS  = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-
-/* ─────────────────────────────────────────
-   STATE
-───────────────────────────────────────── */
-const S = {
-  country:    COUNTRIES[0],
-  visaType:   VISA_GROUPS[1].items[0],
-  apptType:   APPT_TYPES[0],
-  applicants: 1,
-  bio:        VAC_LOCS.map(v => v.full),  // all 5 selected by default
-  con:        [],                          // multi-select, none by default
-  calStart:   new Date(2026,4,21),
-  calEnd:     new Date(2026,8,10),
-};
-
-/* ─────────────────────────────────────────
-   SVG HELPERS
-───────────────────────────────────────── */
-const checkSVG = ok => `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-  fill="none" stroke="#f15a22" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-  style="flex-shrink:0;opacity:${ok?1:0};transition:opacity .1s"><path d="M20 6 9 17l-5-5"/></svg>`;
-
-const xSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
-  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-
-/* ─────────────────────────────────────────
-   FEE CARD
-───────────────────────────────────────── */
-function updateFee() {
-  const days  = (S.calStart && S.calEnd) ? Math.round(Math.abs(S.calEnd - S.calStart) / 86400000) : 0;
-  const price = S.bio.length ? (PRICE_BY_CON[S.con.length] ?? 0) : 0;
-
-  // Window discount for fee card display only (informational)
-  const disc = days >= 30 ? 40 : days >= 14 ? 20 : days >= 7 ? 10 : 0;
-
-  $('fc-price').textContent     = price;
-  $('fc-atype').textContent     = S.apptType.label;
-  $('fc-vtype').textContent     = S.visaType.code;
-  $('fc-applicants').textContent= S.applicants;
-  $('fc-window').textContent    = days;
-
-  const discEl = $('fc-disc');
-  if (disc > 0 && price > 0) {
-    discEl.classList.remove('hidden');
-    $('fc-disc-txt').textContent = `${disc}% window discount applied (${days}-day range)`;
-  } else {
-    discEl.classList.add('hidden');
-  }
-}
-
-/* ─────────────────────────────────────────
-   DROPDOWN ENGINE
-   Reusable: open, close, toggle, closeAll
-───────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-
-function openDD(menuId, chevId, btnId) {
-  const m = $(menuId), c = $(chevId), b = $(btnId);
-  m.classList.remove('hidden','out');
-  c?.classList.add('open');
-  b.setAttribute('aria-expanded','true');
-}
-
-function closeDD(menuId, chevId, btnId) {
-  const m = $(menuId);
-  if (m.classList.contains('hidden')) return;
-  $(chevId)?.classList.remove('open');
-  $(btnId).setAttribute('aria-expanded','false');
-  m.classList.add('out');
-  m.addEventListener('animationend', () => { m.classList.add('hidden'); m.classList.remove('out'); }, {once:true});
-}
-
-const DROPDOWNS = ['country','vtype','atype','bio','con'];
-
-function closeAllBut(skip) {
-  DROPDOWNS.forEach(k => { if (k !== skip) closeDD(`menu-${k}`, `chv-${k}`, `btn-${k}`); });
-}
-
-function toggleDD(key, renderFn) {
-  const m = $(`menu-${key}`);
-  if (!m.classList.contains('hidden')) { closeDD(`menu-${key}`, `chv-${key}`, `btn-${key}`); return; }
-  closeAllBut(key);
-  renderFn();
-  openDD(`menu-${key}`, `chv-${key}`, `btn-${key}`);
-}
-
-/* ─────────────────────────────────────────
-   CHIP FACTORY
-   Renders removable tags into a container
-───────────────────────────────────────── */
-function renderChips(containerId, phId, items, onRemove) {
-  const chips = $(containerId), ph = $(phId);
-  chips.innerHTML = '';
-  if (!items.length) { ph.classList.remove('hidden'); return; }
-  ph.classList.add('hidden');
-  items.forEach(val => {
-    const span = document.createElement('span');
-    span.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800 select-none';
-    const label = val.split('—')[0].trim(); // shorten e.g. "New Delhi — U.S. Embassy" → "New Delhi"
-    span.innerHTML = `${label}<span role="button" tabindex="0" data-v="${val}"
-      class="chip-x rounded p-0.5 cursor-pointer hover:bg-gray-200 inline-flex items-center">${xSVG}</span>`;
-    chips.appendChild(span);
-  });
-  chips.querySelectorAll('.chip-x').forEach(x => {
-    const act = () => onRemove(x.dataset.v);
-    x.addEventListener('click', e => { e.stopPropagation(); act(); });
-    x.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.stopPropagation(); act(); } });
-  });
-}
-
-/* ─────────────────────────────────────────
-   COUNTRY DROPDOWN
-───────────────────────────────────────── */
-function renderCountryList(q = '') {
-  const list = $('list-country');
-  list.innerHTML = '';
-  const lq = q.toLowerCase();
-  const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(lq) || c.code.toLowerCase().includes(lq));
-  if (!filtered.length) { list.innerHTML = `<li class="px-4 py-3 text-sm text-t200 italic">No countries found</li>`; return; }
-  filtered.forEach(c => {
-    const li = mkLi(`ddopt flex items-center gap-3 px-4 py-2.5 text-sm text-t300${S.country.code===c.code?' on':''}`,
-      `<span>${c.flag}</span><span class="flex-1">${c.name}</span>${checkSVG(S.country.code===c.code)}`);
-    li.onclick = () => {
-      S.country = c;
-      $('country-flag').textContent = c.flag;
-      $('country-lbl').textContent  = c.name;
-      closeDD('menu-country','chv-country','btn-country');
-    };
-    list.appendChild(li);
-  });
-}
-
-$('btn-country').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleDD('country', () => { renderCountryList(); $('s-country').value = ''; });
-  if (!$('menu-country').classList.contains('hidden')) setTimeout(() => $('s-country').focus(), 50);
-});
-$('s-country').addEventListener('input',  e => renderCountryList(e.target.value));
-$('s-country').addEventListener('click',  e => e.stopPropagation());
-
-/* ─────────────────────────────────────────
-   VISA TYPE DROPDOWN  (grouped + search)
-───────────────────────────────────────── */
-function renderVtypeList(q = '') {
-  const list = $('list-vtype');
-  list.innerHTML = '';
-  const lq = q.toLowerCase();
-  VISA_GROUPS.forEach(g => {
-    const items = g.items.filter(v => v.label.toLowerCase().includes(lq) || v.code.toLowerCase().includes(lq));
-    if (!items.length) return;
-    const gl = document.createElement('li'); gl.className = 'grp'; gl.textContent = g.group;
-    list.appendChild(gl);
-    items.forEach(v => {
-      const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${S.visaType.code===v.code?' on':''}`,
-        `<span>${v.label}</span>${checkSVG(S.visaType.code===v.code)}`);
-      li.onclick = () => {
-        S.visaType = v;
-        $('vtype-lbl').textContent = v.label;
-        closeDD('menu-vtype','chv-vtype','btn-vtype');
-        updateFee();
-      };
-      list.appendChild(li);
-    });
-  });
-}
-
-$('btn-vtype').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleDD('vtype', () => { renderVtypeList(); $('s-vtype').value = ''; });
-  if (!$('menu-vtype').classList.contains('hidden')) setTimeout(() => $('s-vtype').focus(), 50);
-});
-$('s-vtype').addEventListener('input', e => renderVtypeList(e.target.value));
-$('s-vtype').addEventListener('click', e => e.stopPropagation());
-
-/* ─────────────────────────────────────────
-   APPOINTMENT TYPE DROPDOWN  (rich rows)
-───────────────────────────────────────── */
-function renderAtypeList() {
-  const list = $('list-atype');
-  list.innerHTML = '';
-  APPT_TYPES.forEach(a => {
-    const li = mkLi(`opt px-4 py-2.5${S.apptType.code===a.code?' on':''}`, `
-      <div class="flex items-start gap-3">
-        <span class="w-2 h-2 rounded-full ${a.dot} flex-shrink-0 mt-1.5"></span>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-t300">${a.label}</span>
-            ${a.badge?`<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">${a.badge}</span>`:''}
+      <!-- Pillars -->
+      <div class="grid grid-cols-2 gap-5">
+        <div class="flex items-start gap-3">
+          <div class="w-px h-10 flex-shrink-0 mt-0.5" style="background:var(--rust)"></div>
+          <div>
+            <div class="font-serif text-ink text-sm">Tradizione Piacentina</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Ricette autentiche</div>
           </div>
-          <p class="text-xs text-t200 mt-0.5 leading-relaxed">${a.desc}</p>
         </div>
-        ${checkSVG(S.apptType.code===a.code)}
-      </div>`);
-    li.onclick = () => {
-      S.apptType = a;
-      $('atype-lbl').textContent = a.label;
-      $('atype-dot').className = `w-2 h-2 rounded-full ${a.dot} flex-shrink-0`;
-      closeDD('menu-atype','chv-atype','btn-atype');
-      updateFee();
-    };
-    list.appendChild(li);
+        <div class="flex items-start gap-3">
+          <div class="w-px h-10 flex-shrink-0 mt-0.5" style="background:var(--rust)"></div>
+          <div>
+            <div class="font-serif text-ink text-sm">Carni di Qualità</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Selezione artigianale</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-px h-10 flex-shrink-0 mt-0.5" style="background:var(--rust)"></div>
+          <div>
+            <div class="font-serif text-ink text-sm">Quinto Quarto</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Tagli dimenticati</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-px h-10 flex-shrink-0 mt-0.5" style="background:var(--rust)"></div>
+          <div>
+            <div class="font-serif text-ink text-sm">Famiglia Piazza</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Gestione familiare</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MENU ══════════ -->
+<section id="menu" class="py-28 px-6" style="background:#F0E6D2">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <p class="eyebrow mb-4">Cucina Tradizionale</p>
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="rust-line"></div>
+        <span class="ornament">✦</span>
+        <div class="rust-line"></div>
+      </div>
+      <h2 class="font-serif text-5xl md:text-6xl text-ink font-normal">
+        Il Nostro <em style="color:var(--rust)">Menu</em>
+      </h2>
+      <p class="font-sans text-sm mt-4 max-w-md mx-auto" style="color:var(--ink-soft)">
+        Piatti legati alla tradizione piacentina, con carni di altissima qualità e tagli pregiati.
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex items-center justify-center gap-8 mb-12 border-b border-rust/15 reveal">
+      <button class="tab-btn active pb-4 eyebrow" data-tab="antipasti" onclick="switchTab('antipasti')">Antipasti</button>
+      <button class="tab-btn pb-4 eyebrow" data-tab="primi" onclick="switchTab('primi')">Primi</button>
+      <button class="tab-btn pb-4 eyebrow" data-tab="secondi" onclick="switchTab('secondi')">Secondi</button>
+    </div>
+
+    <!-- Antipasti -->
+    <div id="tab-antipasti" class="tab-pane active grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1559847844-5315695dadae?w=500&q=80" alt="Salumi piacentini" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Salumi Piacentini DOP</h3>
+            <span class="eyebrow" style="color:var(--rust)">€14</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Coppa, salame e pancetta piacentina DOP con gnocco fritto e torta fritta</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1551248429-40975aa4de74?w=500&q=80" alt="Antipasto misto" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Antipasto della Casa</h3>
+            <span class="eyebrow" style="color:var(--rust)">€12</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Selezione di salumi e formaggi locali con mostarda di Cremona e miele artigianale</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1547592180-85f173990554?w=500&q=80" alt="Zuppa" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Lardo e Polenta</h3>
+            <span class="eyebrow" style="color:var(--rust)">€10</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Lardo di Colonnata su polenta abbrustolita con aglio e rosmarino dell'orto</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Primi -->
+    <div id="tab-primi" class="tab-pane grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&q=80" alt="Pasta" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Pisarei e Fasò</h3>
+            <span class="eyebrow" style="color:var(--rust)">€13</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Gnocchetti di pane con fagioli borlotti e soffritto di lardo, piatto simbolo di Piacenza</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=500&q=80" alt="Pasta ripiena" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Anolini in Brodo</h3>
+            <span class="eyebrow" style="color:var(--rust)">€14</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Pasta ripiena di stracotto di manzo e parmigiano in brodo di carne di tradizione piacentina</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=500&q=80" alt="Risotto" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Risotto al Grana</h3>
+            <span class="eyebrow" style="color:var(--rust)">€14</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Risotto mantecato con Grana Padano 24 mesi e burro di malga, finito con tartufo di stagione</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondi -->
+    <div id="tab-secondi" class="tab-pane grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1600803907087-f56d462fd26b?w=500&q=80" alt="Carne" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Bollito Misto</h3>
+            <span class="eyebrow" style="color:var(--rust)">€22</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Selezione di tagli bolliti della tradizione con salsa verde, mostarda e bagnetto rosso</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=500&q=80" alt="Trippa" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-ink text-lg">Quinto Quarto</h3>
+            <span class="eyebrow" style="color:var(--rust)">€18</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Tagli del quinto quarto valorizzati secondo la tradizione: trippa, lingua, testina e nervetti</p>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-img h-48 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80" alt="Arrosto" class="w-full h-full object-cover"/>
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-serif text-lg text-ink">Arrosto di Marco</h3>
+            <span class="eyebrow" style="color:var(--rust)">€24</span>
+          </div>
+          <p class="font-sans text-xs leading-relaxed" style="color:var(--ink-soft)">Taglio pregiato arrosto lentamente al forno con erbe aromatiche, patate al rosmarino e jus</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-12 reveal">
+      <a href="#contatti" class="btn-rust">Prenota per Degustare</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SPECIAL OFFER ══════════ -->
+<section class="py-20 px-6 offer-bg">
+  <div class="max-w-4xl mx-auto text-center reveal">
+    <!-- Wax seal -->
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6" style="background:radial-gradient(circle at 40% 40%, #C4773E, #7A3E22);box-shadow:0 4px 20px rgba(160,82,45,0.4)">
+      <span class="font-serif text-parchment text-sm leading-tight text-center">Menu<br/>Fisso</span>
+    </div>
+    <p class="eyebrow text-parchment/60 mb-3">Offerta Speciale</p>
+    <h2 class="font-serif text-4xl md:text-5xl text-parchment font-normal mb-4">
+      Menu del <em style="color:#C4773E">Mezzogiorno</em>
+    </h2>
+    <p class="font-sans text-parchment/65 text-sm max-w-md mx-auto mb-8">
+      Dal martedì al venerdì a pranzo: antipasto, primo o secondo e acqua inclusa. La vera cucina piacentina a prezzo fisso.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-5">
+      <div class="info-card px-8 py-4 text-center" style="background:rgba(255,255,255,0.08);border-color:rgba(196,119,62,0.3)">
+        <div class="font-serif text-3xl" style="color:#C4773E">€18</div>
+        <div class="eyebrow text-parchment/50 mt-1" style="font-size:0.6rem">A persona · vino escluso</div>
+      </div>
+      <a href="#contatti" class="btn-rust">Prenota il Tavolo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ GALLERY ══════════ -->
+<section id="gallery" class="py-28 px-6" style="background:#F0E6D2">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <p class="eyebrow mb-4">I Nostri Momenti</p>
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="rust-line"></div>
+        <span class="ornament">✦</span>
+        <div class="rust-line"></div>
+      </div>
+      <h2 class="font-serif text-5xl md:text-6xl text-ink font-normal">
+        La <em style="color:var(--rust)">Gallery</em>
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 reveal">
+      <div class="gallery-item h-60 col-span-2">
+        <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" alt="Osteria interno"/>
+      </div>
+      <div class="gallery-item h-60">
+        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80" alt="Piatto"/>
+      </div>
+      <div class="gallery-item h-60">
+        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80" alt="Tavola"/>
+      </div>
+      <div class="gallery-item h-60">
+        <img src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=500&q=80" alt="Ambiente"/>
+      </div>
+      <div class="gallery-item h-60">
+        <img src="https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=500&q=80" alt="Cucina"/>
+      </div>
+      <div class="gallery-item h-60 col-span-2">
+        <img src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=800&q=80" alt="Chef"/>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ RECENSIONI ══════════ -->
+<section class="py-28 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <p class="eyebrow mb-4">TripAdvisor · Google</p>
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="rust-line"></div>
+        <span class="ornament">✦</span>
+        <div class="rust-line"></div>
+      </div>
+      <h2 class="font-serif text-5xl md:text-6xl text-ink font-normal">
+        Cosa <em style="color:var(--rust)">Dicono</em>
+      </h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="review-card p-7 reveal">
+        <div class="flex gap-1 mb-4" style="color:var(--rust)">★★★★★</div>
+        <p class="font-serif text-base italic leading-relaxed mb-5" style="color:var(--ink-soft)">
+          "Osteria storica nel vero senso della parola. Il bollito misto è da antologia e Marco è un oste d'altri tempi. Torneremo sicuramente."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center font-serif" style="background:rgba(160,82,45,0.1);color:var(--rust)">G</div>
+          <div>
+            <div class="font-sans text-sm font-medium text-ink">Gianluca M.</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Piacenza, Italia · TripAdvisor</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card p-7 reveal">
+        <div class="flex gap-1 mb-4" style="color:var(--rust)">★★★★★</div>
+        <p class="font-serif text-base italic leading-relaxed mb-5" style="color:var(--ink-soft)">
+          "Gli anolini in brodo sono i migliori che abbia mai assaggiato. Un posto che trasuda storia da ogni mattone. Personale caloroso e accogliente."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center font-serif" style="background:rgba(160,82,45,0.1);color:var(--rust)">F</div>
+          <div>
+            <div class="font-sans text-sm font-medium text-ink">Francesca L.</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Milano, Italia · Google</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card p-7 reveal">
+        <div class="flex gap-1 mb-4" style="color:var(--rust)">★★★★★</div>
+        <p class="font-serif text-base italic leading-relaxed mb-5" style="color:var(--ink-soft)">
+          "Il quinto quarto come non si trova più. Marco sa valorizzare ogni taglio con una maestria rara. Una delle migliori esperienze culinarie a Piacenza."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center font-serif" style="background:rgba(160,82,45,0.1);color:var(--rust)">R</div>
+          <div>
+            <div class="font-sans text-sm font-medium text-ink">Roberto P.</div>
+            <div class="eyebrow mt-0.5" style="font-size:0.58rem">Parma, Italia · TripAdvisor</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- TripAdvisor link -->
+    <div class="text-center mt-10 reveal">
+      <a href="https://www.tripadvisor.it/Restaurant_Review-g187805-d2206623-Reviews-Osteria_del_Trentino-Piacenza_Province_of_Piacenza_Emilia_Romagna.html" target="_blank" class="btn-outline-rust">
+        Leggi tutte le recensioni su TripAdvisor
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CONTATTI ══════════ -->
+<section id="contatti" class="py-28 px-6" style="background:#F0E6D2">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <p class="eyebrow mb-4">Vieni a Trovarci</p>
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="rust-line"></div>
+        <span class="ornament">✦</span>
+        <div class="rust-line"></div>
+      </div>
+      <h2 class="font-serif text-5xl md:text-6xl text-ink font-normal">
+        Prenota un <em style="color:var(--rust)">Tavolo</em>
+      </h2>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12">
+      <!-- Form -->
+      <div class="reveal">
+        <form onsubmit="handleForm(event)" class="space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Nome e Cognome</label>
+              <input type="text" placeholder="Mario Rossi" class="form-input" required/>
+            </div>
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Email</label>
+              <input type="email" placeholder="mario@email.it" class="form-input" required/>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Telefono</label>
+              <input type="tel" placeholder="+39 0523 ..." class="form-input"/>
+            </div>
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Numero di Persone</label>
+              <select class="form-input" style="background:rgba(255,255,255,0.8)">
+                <option>2 persone</option>
+                <option>3–4 persone</option>
+                <option>5–6 persone</option>
+                <option>7+ persone</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Data</label>
+              <input type="date" class="form-input"/>
+            </div>
+            <div>
+              <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Orario</label>
+              <select class="form-input" style="background:rgba(255,255,255,0.8)">
+                <option>Pranzo (12:00–14:30)</option>
+                <option>Cena (19:30–21:30)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="eyebrow block mb-1.5" style="font-size:0.6rem">Richieste Speciali</label>
+            <textarea rows="3" placeholder="Allergie, occasioni speciali, preferenze..." class="form-input resize-none"></textarea>
+          </div>
+          <button type="submit" class="btn-rust w-full text-center">Invia Prenotazione</button>
+        </form>
+        <div id="form-success" class="hidden mt-4 p-4 text-center" style="background:rgba(160,82,45,0.08);border:1px solid rgba(160,82,45,0.2)">
+          <p class="font-serif text-rust">Grazie! La tua prenotazione è stata ricevuta.</p>
+          <p class="font-sans text-xs mt-1" style="color:var(--ink-soft)">Ti contatteremo entro poche ore per confermare.</p>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="reveal space-y-4">
+        <div class="info-card p-5">
+          <div class="flex items-start gap-4">
+            <span class="text-rust text-lg">📍</span>
+            <div>
+              <div class="eyebrow mb-1" style="font-size:0.6rem">Indirizzo</div>
+              <p class="font-sans text-sm text-ink">Via del Castello, 71<br/>29121 Piacenza (PC), Italia</p>
+              <a href="https://maps.google.com/maps?saddr=&daddr=Via%20del%20Castello,%2071,%2029121,%20Piacenza%20Italia@45.05283,9.68512" target="_blank" class="font-sans text-xs mt-1 block" style="color:var(--rust)">Apri in Google Maps →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card p-5">
+          <div class="flex items-start gap-4">
+            <span class="text-rust text-lg">📞</span>
+            <div>
+              <div class="eyebrow mb-1" style="font-size:0.6rem">Telefono</div>
+              <a href="tel:0523324260" class="font-sans text-sm text-ink hover:text-rust transition-colors">0523 324260</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opening hours — real data from site -->
+        <div class="info-card p-5">
+          <div class="eyebrow mb-3" style="font-size:0.6rem">I Nostri Orari</div>
+          <div class="space-y-0">
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Lunedì</span>
+              <span class="font-sans text-sm text-ink font-medium">Chiuso</span>
+            </div>
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Martedì</span>
+              <span class="font-sans text-xs text-ink">12:00–14:30 · 19:30–21:30</span>
+            </div>
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Mercoledì</span>
+              <span class="font-sans text-xs text-ink">12:00–14:30 · 19:30–21:30</span>
+            </div>
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Giovedì</span>
+              <span class="font-sans text-xs text-ink">12:00–14:30 · 19:30–21:30</span>
+            </div>
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Venerdì</span>
+              <span class="font-sans text-xs text-ink">12:00–14:30 · 19:30–21:30</span>
+            </div>
+            <div class="orari-row flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Sabato</span>
+              <span class="font-sans text-xs text-ink">12:00–14:30 · 19:30–21:30</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="font-sans text-sm" style="color:var(--ink-soft)">Domenica</span>
+              <span class="font-sans text-sm text-ink font-medium">Chiuso</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map placeholder -->
+        <div class="h-40 flex items-center justify-center" style="background:rgba(160,82,45,0.06);border:1px solid rgba(160,82,45,0.15);position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(160,82,45,0.05) 29px,rgba(160,82,45,0.05) 30px),repeating-linear-gradient(90deg,transparent,transparent 29px,rgba(160,82,45,0.05) 29px,rgba(160,82,45,0.05) 30px)"></div>
+          <div class="text-center" style="position:relative;z-index:2">
+            <div class="text-2xl mb-1">📍</div>
+            <p class="font-serif text-rust">Via del Castello, 71</p>
+            <p class="eyebrow mt-1" style="font-size:0.58rem">Piacenza · 29121</p>
+            <a href="https://maps.google.com/maps?saddr=&daddr=Via%20del%20Castello,%2071,%2029121,%20Piacenza%20Italia@45.05283,9.68512" target="_blank" class="eyebrow mt-2 block" style="color:var(--rust);font-size:0.6rem">Indicazioni →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer style="background:#1C1410" class="pt-16 pb-8 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid md:grid-cols-4 gap-10 mb-12">
+
+      <!-- Brand -->
+      <div class="md:col-span-2">
+        <div class="mb-4">
+          <div class="font-serif text-xl tracking-wider" style="color:var(--parchment)">Da Marco</div>
+          <div class="eyebrow mt-1 text-parchment/50" style="font-size:0.55rem">Osteria del Trentino · 1910</div>
+        </div>
+        <p class="font-sans text-sm leading-relaxed max-w-xs mb-6" style="color:rgba(244,237,224,0.45)">
+          L'anima della cucina tradizionale piacentina in una bottega storica dal 1910. Carni di qualità, ospitalità autentica.
+        </p>
+        <!-- Social media icons — real links from site -->
+        <div class="flex gap-3">
+          <a href="https://www.facebook.com/osteriadeltrentino" target="_blank" class="w-9 h-9 border flex items-center justify-center text-xs font-serif transition-all" style="border-color:rgba(160,82,45,0.3);color:rgba(244,237,224,0.5)" onmouseover="this.style.borderColor='#A0522D';this.style.color='#C4773E'" onmouseout="this.style.borderColor='rgba(160,82,45,0.3)';this.style.color='rgba(244,237,224,0.5)'">f</a>
+          <a href="https://www.instagram.com/osteriadeltrentino" target="_blank" class="w-9 h-9 border flex items-center justify-center text-xs font-serif transition-all" style="border-color:rgba(160,82,45,0.3);color:rgba(244,237,224,0.5)" onmouseover="this.style.borderColor='#A0522D';this.style.color='#C4773E'" onmouseout="this.style.borderColor='rgba(160,82,45,0.3)';this.style.color='rgba(244,237,224,0.5)'">ig</a>
+          <a href="https://www.tripadvisor.it/Restaurant_Review-g187805-d2206623-Reviews-Osteria_del_Trentino-Piacenza_Province_of_Piacenza_Emilia_Romagna.html" target="_blank" class="w-9 h-9 border flex items-center justify-center text-xs font-serif transition-all" style="border-color:rgba(160,82,45,0.3);color:rgba(244,237,224,0.5)" onmouseover="this.style.borderColor='#A0522D';this.style.color='#C4773E'" onmouseout="this.style.borderColor='rgba(160,82,45,0.3)';this.style.color='rgba(244,237,224,0.5)'">ta</a>
+        </div>
+      </div>
+
+      <!-- Nav links -->
+      <div>
+        <h4 class="eyebrow mb-5 text-parchment/40">Pagine</h4>
+        <ul class="space-y-3">
+          <li><a href="#home"    class="font-sans text-sm transition-colors" style="color:rgba(244,237,224,0.45)" onmouseover="this.style.color='#C4773E'" onmouseout="this.style.color='rgba(244,237,224,0.45)'">Home</a></li>
+          <li><a href="#storia"  class="font-sans text-sm transition-colors" style="color:rgba(244,237,224,0.45)" onmouseover="this.style.color='#C4773E'" onmouseout="this.style.color='rgba(244,237,224,0.45)'">Chi Siamo</a></li>
+          <li><a href="#menu"    class="font-sans text-sm transition-colors" style="color:rgba(244,237,224,0.45)" onmouseover="this.style.color='#C4773E'" onmouseout="this.style.color='rgba(244,237,224,0.45)'">Menu</a></li>
+          <li><a href="#gallery" class="font-sans text-sm transition-colors" style="color:rgba(244,237,224,0.45)" onmouseover="this.style.color='#C4773E'" onmouseout="this.style.color='rgba(244,237,224,0.45)'">Gallery</a></li>
+          <li><a href="#contatti" class="font-sans text-sm transition-colors" style="color:rgba(244,237,224,0.45)" onmouseover="this.style.color='#C4773E'" onmouseout="this.style.color='rgba(244,237,224,0.45)'">Contatti</a></li>
+        </ul>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <h4 class="eyebrow mb-5 text-parchment/40">Newsletter</h4>
+        <p class="font-sans text-xs mb-4" style="color:rgba(244,237,224,0.4)">Resta aggiornato su eventi, menu stagionali e novità dell'osteria.</p>
+        <div class="flex gap-2">
+          <input type="email" placeholder="La tua email" class="form-input flex-1 text-xs py-2.5" style="background:rgba(255,255,255,0.06);border-color:rgba(160,82,45,0.2);color:var(--parchment)" />
+          <button class="btn-rust px-4 py-2 text-sm">→</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-3" style="border-color:rgba(244,237,224,0.06)">
+      <p class="font-sans text-xs" style="color:rgba(244,237,224,0.25)">© 2025 Osteria del Trentino — Da Marco Piazza. Via del Castello, 71 · 29121 Piacenza</p>
+      <p class="font-sans text-xs" style="color:rgba(244,237,224,0.2)">P.IVA IT·Tel. 0523 324260</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Navbar scroll
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
   });
-}
 
-$('btn-atype').addEventListener('click', e => { e.stopPropagation(); toggleDD('atype', renderAtypeList); });
+  // Mobile menu
+  function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
+  function closeMenu()  { document.getElementById('mobile-menu').classList.remove('open'); }
 
-/* ─────────────────────────────────────────
-   BIOMETRICS MULTI-SELECT
-───────────────────────────────────────── */
-function renderBioChips()   { renderChips('chips-bio','ph-bio', S.bio,  loc => { S.bio = S.bio.filter(x=>x!==loc);  refreshBio(); }); }
-function renderBioOptions() {
-  const list = $('list-bio'); list.innerHTML = '';
-  VAC_LOCS.forEach(v => {
-    const on = S.bio.includes(v.full);
-    const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${on?' on':''}`,
-      `<div><span>${v.full}</span><br><span class="text-xs text-t200">${v.city} Visa Application Centre</span></div>${checkSVG(on)}`);
-    li.onclick = () => {
-      S.bio = on ? S.bio.filter(x=>x!==v.full) : [...S.bio, v.full];
-      refreshBio();
-    };
-    list.appendChild(li);
-  });
-}
-function refreshBio() { renderBioChips(); renderBioOptions(); updateFee(); }
-
-$('btn-bio').addEventListener('click', e => { e.stopPropagation(); toggleDD('bio', renderBioOptions); });
-
-/* ─────────────────────────────────────────
-   CONSULAR MULTI-SELECT
-───────────────────────────────────────── */
-function renderConChips()   { renderChips('chips-con','ph-con', S.con, lbl => { S.con = S.con.filter(x=>x!==lbl); refreshCon(); }); }
-function renderConOptions() {
-  const list = $('list-con'); list.innerHTML = '';
-  CON_LOCS.forEach(c => {
-    const on = S.con.includes(c.label);
-    const li = mkLi(`opt flex items-center justify-between px-4 py-2.5 text-sm text-t300${on?' on':''}`,
-      `<div><span class="font-medium">${c.label}</span><br><span class="text-xs text-t200">${c.note}</span></div>${checkSVG(on)}`);
-    li.onclick = () => {
-      S.con = on ? S.con.filter(x=>x!==c.label) : [...S.con, c.label];
-      refreshCon();
-    };
-    list.appendChild(li);
-  });
-}
-function refreshCon() { renderConChips(); renderConOptions(); updateFee(); }
-
-$('btn-con').addEventListener('click', e => { e.stopPropagation(); toggleDD('con', renderConOptions); });
-
-/* ─────────────────────────────────────────
-   APPLICANTS
-───────────────────────────────────────── */
-$('inp-applicants').addEventListener('input', e => { S.applicants = Math.max(1, parseInt(e.target.value)||1); updateFee(); });
-
-/* ─────────────────────────────────────────
-   CALENDAR RANGE PICKER
-───────────────────────────────────────── */
-(() => {
-  const TODAY    = new Date(2026,4,19);
-  let start      = new Date(2026,4,21);
-  let end        = new Date(2026,8,10);
-  let hover      = null;
-  let picking    = false;   // true after first click, awaiting end date
-  let vy = 2026, vm = 4;
-  let open       = false;
-  let activeQ    = null;
-
-  const fmtD   = d => `${pad(d.getMonth()+1)}/${pad(d.getDate())}/${d.getFullYear()}`;
-  const pad    = n => String(n).padStart(2,'0');
-  const dKey   = d => d ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : null;
-  const diffD  = (a,b) => Math.round(Math.abs(b-a)/86400000);
-  const addD   = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
-
-  function syncState() { S.calStart = start; S.calEnd = end; updateFee(); }
-
-  function updateTrigger() {
-    const txt = $('cal-range-txt'), dur = $('cal-dur-txt'), hint = $('cal-hint-txt');
-    if (start && end) {
-      const d = diffD(start, end);
-      txt.textContent = `${fmtD(start)} → ${fmtD(end)}`;
-      txt.classList.remove('ph');
-      dur.textContent = `${d} day${d!==1?'s':''}`;
-      dur.style.display = '';
-      hint.textContent =
-        d<=7  ? '⚡ Very tight window — fewer available slots' :
-        d<=14 ? '⚡ Short window — limited options' :
-        d<=30 ? '✓ Moderate window — decent slot variety' :
-        d<=90 ? '✓ Good range — more slots & lower cost' :
-                '✓ Wide window — best availability & lowest cost';
-    } else if (start) {
-      txt.textContent = `${fmtD(start)} → …`; txt.classList.remove('ph');
-      dur.style.display = 'none';
-      hint.textContent = 'Now pick an end date';
-    } else {
-      txt.textContent = 'Select date range'; txt.classList.add('ph');
-      dur.style.display = 'none';
-      hint.textContent = 'Wider window = more slot options, lower cost';
-    }
-  }
-
-  function updateFooter() {
-    const el = $('cal-foot-info');
-    if (!start) { el.innerHTML = 'Pick a <strong>start</strong> date'; return; }
-    if (!end)   { el.innerHTML = `<strong>${fmtD(start)}</strong> &rarr; pick end date`; return; }
-    const d = diffD(start,end), disc = d>=30?40:d>=14?20:d>=7?10:0;
-    el.innerHTML = `<strong>${fmtD(start)}</strong> &rarr; <strong>${fmtD(end)}</strong> &nbsp;·&nbsp; ${d} day${d!==1?'s':''}` +
-      (disc ? ` &nbsp;<span style="color:#16a34a;font-weight:600">−${disc}% off</span>` : '');
-  }
-
-  function buildQuickBar() {
-    const bar = $('cal-qbar'); bar.innerHTML = '';
-    CAL_QUICKS.forEach(q => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = `cq${activeQ===q.days?' on':''}`; b.textContent = q.label;
-      b.onclick = () => {
-        start = addD(TODAY,1); end = addD(start,q.days-1);
-        picking=false; hover=null; activeQ=q.days;
-        vm=start.getMonth(); vy=start.getFullYear();
-        renderAll(); updateTrigger(); syncState();
-      };
-      bar.appendChild(b);
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 70);
+        observer.unobserve(entry.target);
+      }
     });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Menu tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
   }
 
-  function buildMonths() {
-    const grid = $('cal-grid'); grid.innerHTML = '';
-    for (let i=0; i<2; i++) {
-      let m=vm+i, y=vy; if(m>11){m-=12;y++;}
-      grid.appendChild(buildMonth(y,m,i));
-    }
+  // Form
+  function handleForm(e) {
+    e.preventDefault();
+    const s = document.getElementById('form-success');
+    s.classList.remove('hidden');
+    e.target.reset();
+    setTimeout(() => s.classList.add('hidden'), 6000);
   }
-
-  function buildMonth(yr, mo, idx) {
-    const wrap = document.createElement('div');
-    // Header
-    const hdr = document.createElement('div'); hdr.className='cal-mhdr';
-    const prev = mkCalNav('&#8249;', idx>0, () => { vm--; if(vm<0){vm=11;vy--;} renderAll(); });
-    const next = mkCalNav('&#8250;', idx<1, () => { vm++; if(vm>11){vm=0;vy++;} renderAll(); });
-    const title = document.createElement('div'); title.className='cal-mtitle'; title.textContent=`${MONTHS[mo]} ${yr}`;
-    hdr.append(prev,title,next); wrap.appendChild(hdr);
-    // Weekday row
-    const wr = document.createElement('div'); wr.className='cal-wdays';
-    WDAYS.forEach(d => { const s=document.createElement('div'); s.className='cal-wd'; s.textContent=d; wr.appendChild(s); });
-    wrap.appendChild(wr);
-    // Days
-    const daysGrid = document.createElement('div'); daysGrid.className='cal-days';
-    const firstDay = new Date(yr,mo,1).getDay();
-    const total    = new Date(yr,mo+1,0).getDate();
-    for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement('div'));
-    for (let d=1;d<=total;d++) {
-      const date = new Date(yr,mo,d);
-      const cell = document.createElement('div'); cell.className='day';
-      const isPast = date < TODAY;
-      if (isPast) { cell.classList.add('dis'); }
-      if (dKey(date)===dKey(TODAY)) cell.classList.add('tod');
-      // Range coloring
-      const effEnd = (picking && hover) ? hover : end;
-      if (start) {
-        const lo = effEnd ? (effEnd<start?effEnd:start) : start;
-        const hi = effEnd ? (effEnd>start?effEnd:start) : null;
-        const isSt   = dKey(date)===dKey(lo);
-        const isEn   = hi && dKey(date)===dKey(hi);
-        const isSame = hi && dKey(lo)===dKey(hi);
-        const inRng  = hi && date>lo && date<hi;
-        if (isSt)  { cell.classList.add('s0'); if(isSame) cell.classList.add('sd'); }
-        if (isEn && !isSame) cell.classList.add('s1');
-        if (inRng) {
-          cell.classList.add('inr');
-          if (date.getDay()===0) cell.classList.add('rl');
-          if (date.getDay()===6) cell.classList.add('rr');
-        }
-      }
-      cell.textContent = d;
-      if (!isPast) {
-        cell.onclick = () => {
-          if (!picking || !start) {
-            start=date; end=null; picking=true; hover=null; activeQ=null;
-          } else {
-            if      (dKey(date)===dKey(start)) end=date;
-            else if (date<start) { end=start; start=date; }
-            else                   end=date;
-            picking=false; hover=null; syncState();
-          }
-          renderAll(); updateTrigger(); updateFooter();
-        };
-        cell.onmouseenter = () => { if(picking){ hover=date; buildMonths(); } };
-      }
-      daysGrid.appendChild(cell);
-    }
-    wrap.appendChild(daysGrid);
-    return wrap;
-  }
-
-  function mkCalNav(html, hide, fn) {
-    const b = document.createElement('button'); b.type='button';
-    b.className = `cal-mnav${hide?' hide':''}`; b.innerHTML = html; b.onclick=fn; return b;
-  }
-
-  function renderAll() { buildQuickBar(); buildMonths(); updateFooter(); }
-
-  function openPanel() {
-    closeAllBut('__cal__');
-    open=true;
-    const p=$('cal-panel'); p.style.display='block'; p.classList.remove('out');
-    $('cal-trig').classList.add('open'); $('cal-trig').setAttribute('aria-expanded','true');
-    $('chv-cal').style.transform='rotate(180deg)';
-    renderAll();
-  }
-  function closePanel() {
-    if (!open) return; open=false;
-    $('cal-trig').classList.remove('open'); $('cal-trig').setAttribute('aria-expanded','false');
-    $('chv-cal').style.transform='';
-    const p=$('cal-panel'); p.classList.add('out');
-    p.addEventListener('animationend',()=>{ p.style.display='none'; p.classList.remove('out'); },{once:true});
-  }
-
-  $('cal-trig').addEventListener('click', e => { e.stopPropagation(); open ? closePanel() : openPanel(); });
-  document.addEventListener('click', e => { if(!$('wr-cal').contains(e.target)) closePanel(); });
-  $('cal-clear').onclick = () => {
-    start=null; end=null; picking=false; hover=null; activeQ=null;
-    renderAll(); updateTrigger(); S.calStart=null; S.calEnd=null; updateFee();
-  };
-  $('cal-apply').onclick = () => { syncState(); closePanel(); };
-
-  updateTrigger(); syncState();
-})();
-
-/* ─────────────────────────────────────────
-   GLOBAL CLOSE ON OUTSIDE CLICK / ESC
-───────────────────────────────────────── */
-document.addEventListener('click', e => {
-  DROPDOWNS.forEach(k => {
-    const w = $(`wr-${k}`);
-    if (w && !w.contains(e.target)) closeDD(`menu-${k}`, `chv-${k}`, `btn-${k}`);
-  });
-});
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeAllBut('__none__'); });
-
-/* ─────────────────────────────────────────
-   UTILITY: create a list item
-───────────────────────────────────────── */
-function mkLi(cls, html) {
-  const li = document.createElement('li');
-  li.setAttribute('role','option'); li.className = cls; li.innerHTML = html; return li;
-}
-
-/* ─────────────────────────────────────────
-   INIT
-───────────────────────────────────────── */
-lucide.createIcons();
-renderBioChips();
-renderConChips();
-updateFee();
-
-})();
 </script>
 </body>
 </html>
